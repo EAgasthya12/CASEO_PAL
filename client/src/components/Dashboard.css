@@ -1,0 +1,228 @@
+.dashboard-container {
+    min-height: 100vh;
+    background-color: #0f172a;
+    /* Slate 900 */
+    color: #e2e8f0;
+    /* Slate 200 */
+    font-family: 'Inter', sans-serif;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid #1e293b;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.logo span {
+    font-weight: 300;
+    opacity: 0.7;
+    margin-left: 0.5rem;
+}
+
+.sync-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.2s;
+}
+
+.sync-btn:hover {
+    background: #2563eb;
+}
+
+.sync-btn:disabled {
+    background: #475569;
+    cursor: not-allowed;
+}
+
+.logout-btn {
+    background: transparent;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.email-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.email-card {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s;
+}
+
+.email-card:hover {
+    transform: translateY(-4px);
+    border-color: #475569;
+}
+
+.email-card.urgency-high {
+    border-left: 4px solid #ef4444;
+}
+
+.email-card.urgency-medium {
+    border-left: 4px solid #eab308;
+}
+
+.email-card.urgency-low {
+    border-left: 4px solid #22c55e;
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.category-academic {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.category-internship {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.category-event {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
+.category-personal {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.category-unknown {
+    background: #475569;
+    color: #cbd5e1;
+}
+
+.date {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #f1f5f9;
+}
+
+.sender {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.snippet {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.deadlines {
+    background: #0f172a;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: auto;
+    font-size: 0.85rem;
+}
+
+.deadlines ul {
+    padding-left: 1.2rem;
+    margin: 0.5rem 0 0 0;
+}
+
+.card-footer {
+    margin-top: 1rem;
+    text-align: right;
+}
+
+.urgency-indicator {
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.urgency-indicator.High {
+    color: #ef4444;
+}
+
+.urgency-indicator.Medium {
+    color: #eab308;
+}
+
+.urgency-indicator.Low {
+    color: #22c55e;
+}
+
+.spinner {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 2px solid white;
+    width: 14px;
+    height: 14px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
