@@ -1,53 +1,241 @@
-.login-container {
+/* Landing Page & Login Styles */
+.landing-container {
   min-height: 100vh;
   width: 100%;
+  background: #0f172a;
+  background: radial-gradient(circle at top right, #1e293b, #0f172a);
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #1f1c2c, #928dab);
   font-family: 'Inter', sans-serif;
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 3rem 4rem;
-  text-align: center;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  border: 1px solid rgba(255, 255, 255, 0.18);
   color: white;
+  position: relative;
+  overflow: hidden;
 }
 
-h1 {
-  font-size: 3rem;
+.landing-content {
+  display: flex;
+  max-width: 1200px;
+  width: 100%;
+  padding: 2rem;
+  z-index: 10;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4rem;
+}
+
+.hero-section {
+  flex: 1;
+  min-width: 300px;
+}
+
+.brand-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.highlight {
+  color: #3b82f6;
+}
+
+.hero-headline {
+  font-size: 3.5rem;
+  line-height: 1.2;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(to right, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtext {
+  font-size: 1.125rem;
+  color: #94a3b8;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.feature-pills {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  backdrop-filter: blur(4px);
+}
+
+/* Login Card */
+.login-card-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 300px;
+}
+
+.login-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3rem;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.card-header h3 {
+  font-size: 1.75rem;
   margin-bottom: 0.5rem;
   font-weight: 700;
-  letter-spacing: 2px;
 }
 
-.subtitle {
-  margin-bottom: 2rem;
-  opacity: 0.8;
-  font-size: 1.1rem;
+.card-header p {
+  color: #94a3b8;
+  margin-bottom: 2.5rem;
 }
 
-.login-btn {
-  background: white;
-  color: #333;
+.google-btn {
+  width: 100%;
+  padding: 2px;
+  background-color: #085ee9;
   border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 15px;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: box-shadow 0.2s ease-in-out, background-color 0.2s;
+  height: 50px;
 }
 
-.login-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.google-btn:hover {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.25);
+  background-color: black;
+  /*#357ae8;*/
+}
+
+.google-icon-wrapper {
+  background-color: #fff;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.google-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.btn-text {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif;
+  flex-grow: 1;
+  text-align: center;
+  margin-right: 46px;
+  /* Offset to center text properly despite icon on left */
+}
+
+.terms-text {
+  margin-top: 2rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Background Shapes */
+.background-shapes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  animation: float 20s infinite alternate;
+}
+
+.shape-1 {
+  top: -10%;
+  right: -5%;
+  width: 500px;
+  height: 500px;
+  background: #3b82f6;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  bottom: -10%;
+  left: -5%;
+  width: 600px;
+  height: 600px;
+  background: #8b5cf6;
+  animation-delay: -5s;
+}
+
+.shape-3 {
+  top: 40%;
+  left: 40%;
+  width: 300px;
+  height: 300px;
+  background: #06b6d4;
+  animation-delay: -10s;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(30px, 50px) rotate(10deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .landing-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 3rem;
+  }
+
+  .hero-subtext {
+    margin: 0 auto 2.5rem;
+  }
+
+  .feature-pills {
+    justify-content: center;
+  }
+
+  .hero-headline {
+    font-size: 2.5rem;
+  }
 }

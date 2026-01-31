@@ -27,6 +27,9 @@ passport.use(
                     // Update tokens
                     existingUser.accessToken = accessToken;
                     if (refreshToken) existingUser.refreshToken = refreshToken; // Refresh token might not be sent every time
+                    if (profile.photos && profile.photos[0]) {
+                        existingUser.photo = profile.photos[0].value;
+                    }
                     await existingUser.save();
                     return done(null, existingUser);
                 }
@@ -36,6 +39,7 @@ passport.use(
                     googleId: profile.id,
                     email: profile.emails[0].value,
                     name: profile.displayName,
+                    photo: (profile.photos && profile.photos[0]) ? profile.photos[0].value : null,
                     accessToken: accessToken,
                     refreshToken: refreshToken,
                 }).save();

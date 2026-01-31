@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
     name: { type: String },
     accessToken: { type: String },
     refreshToken: { type: String },
+    photo: { type: String },
     createdAt: { type: Date, default: Date.now },
 });
 

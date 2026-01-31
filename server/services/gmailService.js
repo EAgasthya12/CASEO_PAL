@@ -9,7 +9,7 @@ const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_REDIRECT_URI
 );
 
-const fetchAndProcessEmails = async (user, count = 10) => {
+const fetchAndProcessEmails = async (user, count = 50) => {
     try {
         if (!user.accessToken) throw new Error('No access token found for user');
 
@@ -22,11 +22,10 @@ const fetchAndProcessEmails = async (user, count = 10) => {
 
         console.log(`Fetching emails for user ${user.email}...`);
 
-        // List messages
+        // List messages (fetch all, not just unread, limit 50 for now)
         const response = await gmail.users.messages.list({
             userId: 'me',
             maxResults: count,
-            q: 'is:unread'
         });
 
         const messages = response.data.messages;
@@ -56,7 +55,19 @@ const fetchAndProcessEmails = async (user, count = 10) => {
             const dateHeader = headers.find(h => h.name === 'Date')?.value;
             const date = dateHeader ? new Date(dateHeader) : new Date();
 
-            // Use snippet for classification to save tokens/complexity
+            // Extract Body
+            let body = '';
+            if (payload.body.data) {
+                body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
+            } else if (payload.parts) {
+                // Find HTML or Text part
+                const part = payload.parts.find(p => p.mimeType === 'text/html') || payload.parts.find(p => p.mimeType === 'text/plain');
+                if (part && part.body.data) {
+                    body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                }
+            }
+
+            // Use snippet for classification to save tokens/complexity, but store full body
             const snippet = detail.data.snippet || '';
 
             console.log(`Processing email: ${subject}`);
@@ -73,6 +84,7 @@ const fetchAndProcessEmails = async (user, count = 10) => {
                 sender: from,
                 date,
                 snippet,
+                body, // Save full body
                 category: intelligence.category || 'Unknown',
                 confidence: intelligence.confidence,
                 urgency: intelligence.urgency || 'Low',
