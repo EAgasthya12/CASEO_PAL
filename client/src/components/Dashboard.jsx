@@ -9,14 +9,22 @@ const Dashboard = () => {
     const [user, setUser] = useState(null);
     const [selectedEmail, setSelectedEmail] = useState(null);
 
+    // New State for Filter & Sort
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [sortOpen, setSortOpen] = useState(false);
+    const [filterCategory, setFilterCategory] = useState(null); // 'Academics', 'Internships', etc.
+    const [sortConfig, setSortConfig] = useState({
+        type: 'date', // 'date' or 'priority'
+        dateVal: null, // for Date Picker
+        priorityOrder: 'high-low' // 'high-low' or 'low-high'
+    });
+
     const fetchUser = async () => {
         try {
             const res = await axios.get('http://localhost:5000/auth/current_user', { withCredentials: true });
             setUser(res.data);
         } catch (err) {
             console.error("Error fetching user:", err);
-            // If checking user fails, we might be unauthorized, or it's a network error.
-            // For now, let's not force redirect unless emails also fail.
         }
     };
 
@@ -27,7 +35,7 @@ const Dashboard = () => {
         } catch (err) {
             console.error("Error fetching emails:", err);
             if (err.response && err.response.status === 401) {
-                window.location.href = '/'; // Redirect to login
+                window.location.href = '/';
             }
         }
     };
@@ -55,18 +63,86 @@ const Dashboard = () => {
         setSelectedEmail(null);
     };
 
+    // --- Filter & Sort Logic ---
+
+    const toggleFilter = () => {
+        setFilterOpen(!filterOpen);
+        setSortOpen(false);
+    };
+
+    const toggleSort = () => {
+        setSortOpen(!sortOpen);
+        setFilterOpen(false);
+    };
+
+    const selectCategory = (cat) => {
+        setFilterCategory(filterCategory === cat ? null : cat); // Toggle
+        // setFilterOpen(false); // Optional: keep open to see selection? Let's keep open.
+    };
+
+    const handleDateChange = (e) => {
+        setSortConfig({ ...sortConfig, type: 'date', dateVal: e.target.value });
+    };
+
+    const handlePrioritySort = (order) => {
+        setSortConfig({ ...sortConfig, type: 'priority', priorityOrder: order });
+        // setSortOpen(false);
+    };
+
     useEffect(() => {
         fetchUser();
         fetchEmails();
     }, []);
 
-    const filterEmails = () => {
-        if (activeTab === 'urgent') return emails.filter(e => e.urgency === 'High' || e.urgency === 'Critical');
-        if (activeTab === 'deadlines') return emails.filter(e => e.extractedDeadlines && e.extractedDeadlines.length > 0);
-        return emails;
+    const processEmails = () => {
+        let result = [...emails];
+
+        // 1. Sidebar Tabs Logic
+        if (activeTab === 'urgent') {
+            result = result.filter(e => e.urgency === 'High' || e.urgency === 'Critical');
+        } else if (activeTab === 'deadlines') {
+            result = result.filter(e => e.extractedDeadlines && e.extractedDeadlines.length > 0);
+        }
+        // 'inbox' takes all (so far)
+
+        // 2. Category Filter
+        if (filterCategory) {
+            result = result.filter(e => e.category === filterCategory);
+        }
+
+        // 3. Date Filter (from Date Picker in Sort)
+        // Requirement: "Show emails sorted relative to the selected date".
+        // Implemented as: Show emails on or after selected date (if picked).
+        if (sortConfig.type === 'date' && sortConfig.dateVal) {
+            const selectedTime = new Date(sortConfig.dateVal).getTime();
+            result = result.filter(e => {
+                const emailTime = new Date(e.date).getTime();
+                return emailTime >= selectedTime;
+            });
+        }
+
+        // 4. Sorting
+        const urgencyScore = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1, 'Unknown': 0 };
+
+        result.sort((a, b) => {
+            if (sortConfig.type === 'priority') {
+                const scoreA = urgencyScore[a.urgency] || 0;
+                const scoreB = urgencyScore[b.urgency] || 0;
+                return sortConfig.priorityOrder === 'high-low'
+                    ? scoreB - scoreA
+                    : scoreA - scoreB;
+            } else {
+                // Default: Date Sort (Desc - Newest First)
+                // Even with date filter, we usually want newest first on top
+                return new Date(b.date) - new Date(a.date);
+            }
+        });
+
+        return result;
     };
 
-    const filteredEmails = filterEmails();
+    const filteredEmails = processEmails();
+    const categories = ['Academic', 'Internship', 'Personal', 'Event'];
 
     return (
         <div className="dashboard-layout">
@@ -149,9 +225,93 @@ const Dashboard = () => {
                 <div className="content-area">
                     <div className="content-header">
                         <h1>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+
                         <div className="view-actions">
-                            <button className="filter-btn">Filter</button>
-                            <button className="sort-btn">Sort: Urgency</button>
+                            {/* Filter Button & Dropdown */}
+                            <div className="action-wrapper">
+                                <button className={`filter-btn ${filterCategory ? 'active' : ''}`} onClick={toggleFilter}>
+                                    Filter {filterCategory && `: ${filterCategory}`}
+                                </button>
+                                {filterOpen && (
+                                    <div className="dropdown-menu">
+                                        <div className="submenu-label">Category</div>
+                                        <div className="category-row">
+                                            {categories.map(cat => (
+                                                <span
+                                                    key={cat}
+                                                    className={`category-chip ${filterCategory === cat ? 'active' : ''}`}
+                                                    onClick={() => selectCategory(cat)}
+                                                >
+                                                    {cat}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Sort Button & Dropdown */}
+                            <div className="action-wrapper">
+                                <button className="sort-btn" onClick={toggleSort}>
+                                    Sort: {sortConfig.type === 'date' ? 'Date' : 'Priority'}
+                                </button>
+                                {sortOpen && (
+                                    <div className="dropdown-menu">
+
+                                        {/* Sort by Date Option */}
+                                        <div className="sort-option-container">
+                                            <div
+                                                className={`dropdown-item ${sortConfig.type === 'date' ? 'selected' : ''}`}
+                                                onClick={() => setSortConfig({ ...sortConfig, type: 'date' })}
+                                            >
+                                                Sort by Date
+                                            </div>
+                                            {sortConfig.type === 'date' && (
+                                                <div style={{ padding: '0 8px 8px 8px' }}>
+                                                    <span className="submenu-label">Started From:</span>
+                                                    <input
+                                                        type="date"
+                                                        className="date-picker"
+                                                        value={sortConfig.dateVal || ''}
+                                                        onChange={handleDateChange}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div style={{ borderTop: '1px solid var(--border-color)', margin: '4px 0' }}></div>
+
+                                        {/* Sort by Priority Option */}
+                                        <div className="sort-option-container">
+                                            <div
+                                                className={`dropdown-item ${sortConfig.type === 'priority' ? 'selected' : ''}`}
+                                                onClick={() => setSortConfig({ ...sortConfig, type: 'priority' })}
+                                            >
+                                                Sort by Priority
+                                            </div>
+                                            {sortConfig.type === 'priority' && (
+                                                <div style={{ padding: '0 8px 8px 8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <span
+                                                        className={`dropdown-item ${sortConfig.priorityOrder === 'high-low' ? 'selected' : ''}`}
+                                                        style={{ fontSize: '0.85rem', padding: '6px' }}
+                                                        onClick={(e) => { e.stopPropagation(); handlePrioritySort('high-low'); }}
+                                                    >
+                                                        High → Low
+                                                    </span>
+                                                    <span
+                                                        className={`dropdown-item ${sortConfig.priorityOrder === 'low-high' ? 'selected' : ''}`}
+                                                        style={{ fontSize: '0.85rem', padding: '6px' }}
+                                                        onClick={(e) => { e.stopPropagation(); handlePrioritySort('low-high'); }}
+                                                    >
+                                                        Low → High
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -167,7 +327,7 @@ const Dashboard = () => {
                                             <span className="sender-name">{email.sender}</span>
                                             {email.urgency === 'Critical' && <span className="status-dot"></span>}
                                         </div>
-                                        <span className="email-time">{new Date(email.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        <span className="email-time">{new Date(email.date).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
 
                                     <h3 className="email-subject">
@@ -194,7 +354,7 @@ const Dashboard = () => {
                         ))}
                         {filteredEmails.length === 0 && (
                             <div className="empty-state">
-                                <p>No emails found in this view.</p>
+                                <p>No emails found matching your filters.</p>
                             </div>
                         )}
                     </div>
