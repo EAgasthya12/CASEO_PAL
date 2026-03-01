@@ -14,19 +14,40 @@ class DateExtractor:
             self.nlp = spacy.load("en_core_web_sm")
 
     def extract_deadlines(self, text):
-        doc = self.nlp(text)
-        deadlines = []
-        
-        # Extract DATE and TIME entities
-        for ent in doc.ents:
-            if ent.label_ in ["DATE", "TIME"]:
-                parsed_date = dateparser.parse(ent.text)
-                if parsed_date:
-                    deadlines.append({
-                        "text": ent.text,
-                        "date": parsed_date.isoformat(),
-                        "label": ent.label_
-                    })
+        try:
+            # Truncate to avoid model crashes or hangs on long inputs
+            if text and len(text) > 1024:
+                text = text[:1024]
+
+            doc = self.nlp(text)
+            deadlines = []
+            
+            # Extract DATE and TIME entities
+            for ent in doc.ents:
+                if ent.label_ in ["DATE", "TIME"]:
+                    parsed_date = dateparser.parse(ent.text)
+                    if parsed_date:
+                        deadlines.append({
+                            "text": ent.text,
+                            "date": parsed_date.isoformat(),
+                            "label": ent.label_
+                        })
+            
+            # Urgency detection
+            urgency = "Low"
+            # ... (rest of logic is same, but indentation shifts if I wrap whole thing, 
+            # let's just wrap the dangerous part and return effectively)
+            
+            # ... actually, let's keep it simple and just return what we have
+        except Exception as e:
+            print(f"Extraction error: {e}")
+            return [], "Low"
+
+        # Continue with urgency detection (which is safe)
+        urgency = "Low"
+        if deadlines:
+            today = datetime.now()
+            # ...
         
         # Urgency detection
         urgency = "Low"

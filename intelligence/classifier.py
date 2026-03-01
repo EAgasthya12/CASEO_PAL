@@ -9,7 +9,12 @@ class EmailClassifier:
 
     def classify(self, text):
         try:
-            result = self.classifier(text, self.labels)
+            # Truncate to avoid model crashes on long inputs/edge cases
+            # 512 characters is usually enough for a subject + snippet
+            if text and len(text) > 512:
+                text = text[:512]
+
+            result = self.classifier(text, self.labels, truncation=True)
             # result['labels'] and result['scores'] are sorted by score descending
             return {
                 "category": result['labels'][0],

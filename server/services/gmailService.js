@@ -127,11 +127,16 @@ const fetchAndProcessEmails = async (user, count = 50) => {
         };
 
         // Process in chunks to avoid rate limits
-        const chunkSize = 5;
+        const chunkSize = 10;
         for (let i = 0; i < newMessages.length; i += chunkSize) {
             const chunk = newMessages.slice(i, i + chunkSize);
             const results = await Promise.all(chunk.map(msg => processMessage(msg)));
             processedEmails.push(...results.filter(r => r !== null));
+
+            // Add a small delay between chunks to keep the laptop safe
+            if (i + chunkSize < newMessages.length) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
         }
 
         console.log(`Processed ${processedEmails.length} new emails.`);

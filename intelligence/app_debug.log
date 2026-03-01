@@ -1,0 +1,316 @@
+2026-02-15 11:14:53,228 INFO: Starting app on port 5001
+2026-02-15 11:14:53,244 WARNING:  * Debugger is active!
+2026-02-15 11:14:53,261 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:15:44,993 DEBUG: close.started
+2026-02-15 11:15:44,995 DEBUG: close.complete
+2026-02-15 11:16:20,235 INFO: Starting app on port 5001
+2026-02-15 11:16:20,321 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.104:5001
+2026-02-15 11:16:20,322 INFO: [33mPress CTRL+C to quit[0m
+2026-02-15 11:16:20,330 INFO:  * Restarting with stat
+2026-02-15 11:17:01,057 INFO: Starting app on port 5001
+2026-02-15 11:17:01,097 WARNING:  * Debugger is active!
+2026-02-15 11:17:01,185 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:18:29,567 INFO:  * Detected change in 'D:\\Major\\CASEO_PAL\\intelligence\\app.py', reloading
+2026-02-15 11:18:29,596 DEBUG: close.started
+2026-02-15 11:18:29,596 DEBUG: close.complete
+2026-02-15 11:18:31,011 INFO:  * Restarting with stat
+2026-02-15 11:22:22,429 INFO:  * Restarting with stat
+2026-02-15 11:22:44,269 INFO: Starting app on port 5001
+2026-02-15 11:22:44,307 WARNING:  * Debugger is active!
+2026-02-15 11:22:44,329 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:23:10,287 DEBUG: close.started
+2026-02-15 11:23:10,290 DEBUG: close.complete
+2026-02-15 11:23:11,898 DEBUG: close.started
+2026-02-15 11:23:11,911 DEBUG: close.complete
+2026-02-15 11:23:41,040 INFO: Starting app on port 5001
+2026-02-15 11:23:41,081 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.104:5001
+2026-02-15 11:23:41,081 INFO: [33mPress CTRL+C to quit[0m
+2026-02-15 11:23:41,085 INFO:  * Restarting with stat
+2026-02-15 11:23:58,192 INFO: Starting app on port 5001
+2026-02-15 11:23:58,204 WARNING:  * Debugger is active!
+2026-02-15 11:23:58,245 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:25:39,570 INFO:  * Detected change in 'D:\\Major\\CASEO_PAL\\intelligence\\classifier.py', reloading
+2026-02-15 11:25:39,890 DEBUG: close.started
+2026-02-15 11:25:39,910 DEBUG: close.complete
+2026-02-15 11:25:42,859 INFO:  * Restarting with stat
+2026-02-15 11:26:03,244 INFO: Starting app on port 5001
+2026-02-15 11:26:03,268 WARNING:  * Debugger is active!
+2026-02-15 11:26:03,288 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:26:38,316 DEBUG: Looking up time zone info from registry
+2026-02-15 11:26:38,539 INFO: 127.0.0.1 - - [15/Feb/2026 11:26:38] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:26:38,558 INFO: 127.0.0.1 - - [15/Feb/2026 11:26:38] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:26:40,900 INFO: 127.0.0.1 - - [15/Feb/2026 11:26:40] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:26:41,094 INFO: 127.0.0.1 - - [15/Feb/2026 11:26:41] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:26:41,158 INFO: 127.0.0.1 - - [15/Feb/2026 11:26:41] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:26:50,049 INFO: 127.0.0.1 - - [15/Feb/2026 11:26:50] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:26:50,694 DEBUG: close.started
+2026-02-15 11:26:50,742 DEBUG: close.complete
+2026-02-15 11:26:56,899 DEBUG: close.started
+2026-02-15 11:26:56,920 DEBUG: close.complete
+2026-02-15 11:27:22,063 INFO: Starting app on port 5001
+2026-02-15 11:27:22,101 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.104:5001
+2026-02-15 11:27:22,101 INFO: [33mPress CTRL+C to quit[0m
+2026-02-15 11:27:22,104 INFO:  * Restarting with stat
+2026-02-15 11:27:38,020 INFO: Starting app on port 5001
+2026-02-15 11:27:38,038 WARNING:  * Debugger is active!
+2026-02-15 11:27:38,054 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:31:01,447 INFO:  * Detected change in 'D:\\Major\\CASEO_PAL\\intelligence\\app.py', reloading
+2026-02-15 11:31:01,999 DEBUG: close.started
+2026-02-15 11:31:02,100 DEBUG: close.complete
+2026-02-15 11:31:05,536 INFO:  * Restarting with stat
+2026-02-15 11:31:27,576 INFO: Starting app on port 5001
+2026-02-15 11:31:27,599 WARNING:  * Debugger is active!
+2026-02-15 11:31:27,623 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:31:52,515 DEBUG: close.started
+2026-02-15 11:31:52,516 DEBUG: close.complete
+2026-02-15 11:31:54,032 DEBUG: close.started
+2026-02-15 11:31:54,044 DEBUG: close.complete
+2026-02-15 11:38:03,505 INFO: Starting app on port 5001
+2026-02-15 11:38:03,563 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.104:5001
+2026-02-15 11:38:03,564 INFO: [33mPress CTRL+C to quit[0m
+2026-02-15 11:38:03,567 INFO:  * Restarting with stat
+2026-02-15 11:38:29,114 INFO: Starting app on port 5001
+2026-02-15 11:38:29,133 WARNING:  * Debugger is active!
+2026-02-15 11:38:29,185 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:39:47,912 INFO: 127.0.0.1 - - [15/Feb/2026 11:39:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:39:51,847 INFO: 127.0.0.1 - - [15/Feb/2026 11:39:51] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:39:51,855 INFO: 127.0.0.1 - - [15/Feb/2026 11:39:51] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:39:51,862 INFO: 127.0.0.1 - - [15/Feb/2026 11:39:51] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:39:52,842 DEBUG: Looking up time zone info from registry
+2026-02-15 11:39:53,020 INFO: 127.0.0.1 - - [15/Feb/2026 11:39:53] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:16,114 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:16] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:25,250 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:25] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:25,583 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:25] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:26,885 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:26] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:26,997 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:26] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:53,099 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:53] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:53,981 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:53] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:54,081 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:54] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:54,334 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:54] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:40:54,335 INFO: 127.0.0.1 - - [15/Feb/2026 11:40:54] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:06,250 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:06] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:06,742 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:06] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:06,986 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:06] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:07,093 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:07] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:07,103 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:07] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:19,030 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:19,068 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:19,266 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:19,414 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:19,685 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:31,550 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:31] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:31,608 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:31] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:39,730 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:39] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:39,732 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:39] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:39,749 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:39] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:46,988 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:46] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:47,282 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:47,636 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:47,666 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:47,667 INFO: 127.0.0.1 - - [15/Feb/2026 11:41:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:41:53,180 INFO:  * Detected change in 'D:\\Major\\CASEO_PAL\\intelligence\\extractor.py', reloading
+2026-02-15 11:41:53,613 DEBUG: close.started
+2026-02-15 11:41:53,649 DEBUG: close.complete
+2026-02-15 11:41:57,693 INFO:  * Restarting with stat
+2026-02-15 11:42:23,142 INFO: Starting app on port 5001
+2026-02-15 11:42:23,164 WARNING:  * Debugger is active!
+2026-02-15 11:42:23,204 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 11:42:36,408 DEBUG: Looking up time zone info from registry
+2026-02-15 11:42:36,883 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:36] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:36,908 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:36] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:36,934 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:36] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:37,032 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:37] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:40,973 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:40] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:47,261 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:47,460 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:47,637 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:48,134 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:48] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:42:48,167 INFO: 127.0.0.1 - - [15/Feb/2026 11:42:48] "POST /classify HTTP/1.1" 200 -
+2026-02-15 11:52:06,212 DEBUG: close.started
+2026-02-15 11:52:06,262 DEBUG: close.complete
+2026-02-15 11:52:11,380 DEBUG: close.started
+2026-02-15 11:52:11,396 DEBUG: close.complete
+2026-02-15 11:52:36,113 INFO: Starting app on port 5001
+2026-02-15 11:52:36,150 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.104:5001
+2026-02-15 11:52:36,150 INFO: [33mPress CTRL+C to quit[0m
+2026-02-15 11:52:36,153 INFO:  * Restarting with stat
+2026-02-15 11:53:21,777 INFO: Starting app on port 5001
+2026-02-15 11:53:21,817 WARNING:  * Debugger is active!
+2026-02-15 11:53:21,930 INFO:  * Debugger PIN: 518-564-147
+2026-02-15 12:31:35,485 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:35] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:35,884 DEBUG: Looking up time zone info from registry
+2026-02-15 12:31:37,024 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:37] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:37,082 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:37] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:47,655 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:47,656 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:47] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:52,871 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:52] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:52,896 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:52] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:52,932 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:52] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:52,935 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:52] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:31:52,944 INFO: 127.0.0.1 - - [15/Feb/2026 12:31:52] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:00,048 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:00] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:00,055 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:00] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:00,245 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:00] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:01,806 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:01] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:01,941 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:01] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:10,374 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:10] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:14,682 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:14] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:19,476 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:19,478 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:19,525 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:19] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:27,363 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:27] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:27,386 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:27] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:27,421 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:27] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:28,824 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:28] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:28,826 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:28] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:37,081 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:37] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:37,145 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:37] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:38,568 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:38] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:39,166 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:39] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:39,480 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:39] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:43,733 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:43] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:43,885 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:43] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:44,026 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:44] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:44,027 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:44] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:44,308 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:44] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:51,618 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:51] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:51,815 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:51] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:52,893 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:52] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:52,993 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:52] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:53,023 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:53] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:57,958 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:57] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:58,158 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:58] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:58,198 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:58] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:58,202 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:58] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:32:58,206 INFO: 127.0.0.1 - - [15/Feb/2026 12:32:58] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:33:05,192 INFO: 127.0.0.1 - - [15/Feb/2026 12:33:05] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:33:05,193 INFO: 127.0.0.1 - - [15/Feb/2026 12:33:05] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:33:05,220 INFO: 127.0.0.1 - - [15/Feb/2026 12:33:05] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:33:05,229 INFO: 127.0.0.1 - - [15/Feb/2026 12:33:05] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:33:06,829 INFO: 127.0.0.1 - - [15/Feb/2026 12:33:06] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:51:49,895 INFO: 127.0.0.1 - - [15/Feb/2026 12:51:49] "POST /classify HTTP/1.1" 200 -
+2026-02-15 12:51:49,899 INFO: 127.0.0.1 - - [15/Feb/2026 12:51:49] "POST /classify HTTP/1.1" 200 -
+2026-02-15 19:34:16,697 DEBUG: close.started
+2026-02-15 19:34:16,752 DEBUG: close.complete
+2026-02-15 19:34:22,769 DEBUG: close.started
+2026-02-15 19:34:22,786 DEBUG: close.complete
+2026-03-01 17:39:04,271 INFO: Starting app on port 5001
+2026-03-01 17:39:04,390 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.107:5001
+2026-03-01 17:39:04,392 INFO: [33mPress CTRL+C to quit[0m
+2026-03-01 17:39:04,399 INFO:  * Restarting with stat
+2026-03-01 17:39:33,864 INFO: Starting app on port 5001
+2026-03-01 17:39:33,895 WARNING:  * Debugger is active!
+2026-03-01 17:39:33,928 INFO:  * Debugger PIN: 518-564-147
+2026-03-01 17:54:59,492 INFO: Starting app on port 5001
+2026-03-01 17:54:59,531 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.107:5001
+2026-03-01 17:54:59,533 INFO: [33mPress CTRL+C to quit[0m
+2026-03-01 17:54:59,538 INFO:  * Restarting with stat
+2026-03-01 17:55:27,173 INFO: Starting app on port 5001
+2026-03-01 17:55:27,208 WARNING:  * Debugger is active!
+2026-03-01 17:55:27,275 INFO:  * Debugger PIN: 518-564-147
+2026-03-01 17:57:30,864 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:30] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:39,745 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:39] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:39,761 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:39] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:39,983 DEBUG: Looking up time zone info from registry
+2026-03-01 17:57:40,062 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:40] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:40,221 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:40] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:48,179 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:48] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:48,265 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:48] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:48,328 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:48] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:50,225 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:50] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:50,566 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:50] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:55,665 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:55] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:55,936 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:55] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:55,990 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:55] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:56,047 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:56] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:57:56,129 INFO: 127.0.0.1 - - [01/Mar/2026 17:57:56] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:01,701 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:01] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:02,458 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:02] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:02,661 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:02] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:02,753 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:02] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:04,039 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:04] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:11,724 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:11] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:11,798 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:11] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:11,872 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:11] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:13,555 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:13] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:13,919 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:13] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:20,006 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:20] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:20,099 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:20] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:20,108 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:20] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:20,159 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:20] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:27,573 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:27] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:33,000 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:33] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:33,041 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:33] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:33,054 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:33] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:33,076 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:33] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:33,077 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:33] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:39,577 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:39] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:39,976 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:39] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:40,218 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:40] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:43,469 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:43] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:47,966 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:47] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:54,063 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:54] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:54,066 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:54] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:54,098 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:54] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:54,102 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:54] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:58:54,109 INFO: 127.0.0.1 - - [01/Mar/2026 17:58:54] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:59:01,678 INFO: 127.0.0.1 - - [01/Mar/2026 17:59:01] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:59:02,262 INFO: 127.0.0.1 - - [01/Mar/2026 17:59:02] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:59:02,425 INFO: 127.0.0.1 - - [01/Mar/2026 17:59:02] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:59:03,321 INFO: 127.0.0.1 - - [01/Mar/2026 17:59:03] "POST /classify HTTP/1.1" 200 -
+2026-03-01 17:59:03,435 INFO: 127.0.0.1 - - [01/Mar/2026 17:59:03] "POST /classify HTTP/1.1" 200 -
+2026-03-01 18:02:23,621 INFO: 127.0.0.1 - - [01/Mar/2026 18:02:23] "POST /classify HTTP/1.1" 200 -
+2026-03-01 18:02:23,626 INFO: 127.0.0.1 - - [01/Mar/2026 18:02:23] "POST /classify HTTP/1.1" 200 -
+2026-03-01 18:16:48,113 DEBUG: close.started
+2026-03-01 18:16:48,165 DEBUG: close.complete
+2026-03-01 18:16:53,767 DEBUG: close.started
+2026-03-01 18:16:53,779 DEBUG: close.complete
+2026-03-01 18:55:00,685 INFO: Starting app on port 5001
+2026-03-01 18:55:00,718 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.107:5001
+2026-03-01 18:55:00,719 INFO: [33mPress CTRL+C to quit[0m
+2026-03-01 18:55:00,723 INFO:  * Restarting with stat
+2026-03-01 18:55:22,257 INFO: Starting app on port 5001
+2026-03-01 18:55:22,277 WARNING:  * Debugger is active!
+2026-03-01 18:55:22,308 INFO:  * Debugger PIN: 518-564-147
+2026-03-01 18:57:49,897 DEBUG: close.started
+2026-03-01 18:57:49,967 DEBUG: close.complete
+2026-03-01 18:57:54,537 DEBUG: close.started
+2026-03-01 18:57:54,564 DEBUG: close.complete
+2026-03-01 18:58:37,899 INFO: Starting app on port 5001
+2026-03-01 18:58:37,941 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.0.107:5001
+2026-03-01 18:58:37,941 INFO: [33mPress CTRL+C to quit[0m
+2026-03-01 18:58:37,947 INFO:  * Restarting with stat
+2026-03-01 18:59:18,538 INFO: Starting app on port 5001
+2026-03-01 18:59:18,594 WARNING:  * Debugger is active!
+2026-03-01 18:59:18,645 INFO:  * Debugger PIN: 518-564-147
+2026-03-01 19:00:16,415 DEBUG: close.started
+2026-03-01 19:00:16,417 DEBUG: close.complete
+2026-03-01 19:00:18,723 DEBUG: close.started
+2026-03-01 19:00:18,730 DEBUG: close.complete

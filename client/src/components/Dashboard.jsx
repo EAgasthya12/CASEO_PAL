@@ -91,7 +91,10 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchUser();
-        fetchEmails();
+        // Load whatever we have instantly, then sync in background
+        fetchEmails().then(() => {
+            syncEmails();
+        });
     }, []);
 
     const processEmails = () => {
