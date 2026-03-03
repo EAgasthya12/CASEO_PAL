@@ -652,10 +652,34 @@
     border: 1px solid #fee2e2;
 }
 
-.tag-due {
+.tag-due,
+.tag-deadline-upcoming {
     background-color: #fff1f2;
     color: #e11d48;
     border: 1px solid #ffe4e6;
+}
+
+/* Deadline already passed — shown as CLOSED */
+.tag-deadline-expired {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    border: 1px solid #e2e8f0;
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+/* Deadline is today — shown as DUE TODAY */
+.tag-deadline-today {
+    background-color: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #fed7aa;
+    font-weight: 700;
+    animation: pulse-today 2s ease-in-out infinite;
+}
+
+@keyframes pulse-today {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.3); }
+    50%       { box-shadow: 0 0 0 4px rgba(234, 88, 12, 0); }
 }
 
 .tag-category {

@@ -148,4 +148,84 @@ const fetchAndProcessEmails = async (user, count = 50) => {
     }
 };
 
-module.exports = { fetchAndProcessEmails };
+/**
+ * Fetch emails from a Gmail mailbox label (SENT, DRAFT, TRASH)
+ * directly from Gmail API — no DB storage, no AI analysis.
+ * @param {Object} user - Authenticated user with accessToken/refreshToken
+ * @param {string} label - Gmail label: 'SENT', 'DRAFT', 'TRASH'
+ * @param {number} count - Max results to fetch
+ */
+const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
+    try {
+        if (!user.accessToken) throw new Error('No access token found for user');
+
+        const client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+        );
+        client.setCredentials({
+            access_token: user.accessToken,
+            refresh_token: user.refreshToken
+        });
+
+        const gmail = google.gmail({ version: 'v1', auth: client });
+
+        console.log(`[GmailService] Fetching ${label} mailbox for user ${user.email}...`);
+
+        const response = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: count,
+            labelIds: [label]
+        });
+
+        const messages = response.data.messages;
+        if (!messages || messages.length === 0) {
+            console.log(`[GmailService] No messages found in ${label}.`);
+            return [];
+        }
+
+        // Fetch message details in parallel (no AI, just headers + snippet)
+        const details = await Promise.all(
+            messages.map(async (msg) => {
+                try {
+                    const detail = await gmail.users.messages.get({
+                        userId: 'me',
+                        id: msg.id,
+                        format: 'metadata',
+                        metadataHeaders: ['Subject', 'From', 'To', 'Date']
+                    });
+
+                    const headers = detail.data.payload?.headers || [];
+                    const get = (name) => headers.find(h => h.name === name)?.value || '';
+
+                    return {
+                        _id: msg.id,
+                        googleMessageId: msg.id,
+                        subject: get('Subject') || '(No Subject)',
+                        sender: get('From') || '(Unknown)',
+                        recipient: get('To') || '',
+                        date: get('Date') ? new Date(get('Date')) : new Date(),
+                        snippet: detail.data.snippet || '',
+                        mailbox: label,
+                        // No urgency/category/deadlines — not analyzed
+                    };
+                } catch (err) {
+                    console.error(`[GmailService] Failed to fetch message ${msg.id}:`, err.message);
+                    return null;
+                }
+            })
+        );
+
+        const results = details.filter(d => d !== null);
+        console.log(`[GmailService] Fetched ${results.length} messages from ${label}.`);
+        return results;
+
+    } catch (error) {
+        console.error(`[GmailService] Error fetching mailbox ${label}:`, error.message);
+        throw error;
+    }
+};
+
+
+module.exports = { fetchAndProcessEmails, fetchMailboxEmails };

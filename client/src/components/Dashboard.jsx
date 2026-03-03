@@ -2,12 +2,53 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './Dashboard.css';
 
+// Decodes HTML entities like &#39; → ' and &amp; → &
+// Gmail snippets and subjects often contain HTML-encoded characters.
+const decodeHtmlEntities = (html) => {
+    if (!html) return '';
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
+};
+
+/**
+ * Returns deadline display info based on whether the date is past, today, or future.
+ * @param {string|Date} dateStr
+ * @returns {{ label: string, status: 'expired'|'today'|'upcoming' }}
+ */
+const deadlineTag = (dateStr) => {
+    const due = new Date(dateStr);
+    const now = new Date();
+    // Compare calendar dates only (ignore time)
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffMs = dueDay - today;
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    // Format as DD-MM-YYYY
+    const dd = String(due.getDate()).padStart(2, '0');
+    const mm = String(due.getMonth() + 1).padStart(2, '0');
+    const yyyy = due.getFullYear();
+    const formatted = `${dd}-${mm}-${yyyy}`;
+
+    if (diffDays < 0) return { label: 'CLOSED', status: 'expired' };
+    if (diffDays === 0) return { label: 'DUE TODAY', status: 'today' };
+    return { label: `DUE: ${formatted}`, status: 'upcoming' };
+};
+
 const Dashboard = () => {
     const [emails, setEmails] = useState([]);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('inbox');
     const [user, setUser] = useState(null);
     const [selectedEmail, setSelectedEmail] = useState(null);
+
+    // Mailbox state for Sent / Drafts / Archive (fetched live from Gmail)
+    const [mailboxEmails, setMailboxEmails] = useState([]);
+    const [mailboxLoading, setMailboxLoading] = useState(false);
+    const [labelCounts, setLabelCounts] = useState({ sent: null, drafts: null });
+
+    const MAILBOX_TABS = ['sent', 'drafts'];
 
     // New State for Filter & Sort
     const [filterOpen, setFilterOpen] = useState(false);
@@ -40,6 +81,15 @@ const Dashboard = () => {
         }
     };
 
+    const fetchLabelCounts = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/emails/label-counts', { withCredentials: true });
+            setLabelCounts(res.data);
+        } catch (err) {
+            console.error('Error fetching label counts:', err);
+        }
+    };
+
     const syncEmails = async () => {
         setLoading(true);
         try {
@@ -49,6 +99,26 @@ const Dashboard = () => {
             console.error("Error syncing emails:", err);
         }
         setLoading(false);
+    };
+
+    const fetchMailbox = async (tab) => {
+        setMailboxLoading(true);
+        setMailboxEmails([]);
+        try {
+            const res = await axios.get(`http://localhost:5000/api/emails/mailbox?label=${tab}`, { withCredentials: true });
+            setMailboxEmails(res.data);
+        } catch (err) {
+            console.error(`Error fetching ${tab}:`, err);
+        }
+        setMailboxLoading(false);
+    };
+
+    const switchTab = (tab) => {
+        setActiveTab(tab);
+        setSelectedEmail(null);
+        if (MAILBOX_TABS.includes(tab)) {
+            fetchMailbox(tab);
+        }
     };
 
     const handleLogout = () => {
@@ -61,6 +131,33 @@ const Dashboard = () => {
 
     const closeEmail = () => {
         setSelectedEmail(null);
+    };
+
+    const addToCalendar = async (email) => {
+        if (!email.extractedDeadlines || email.extractedDeadlines.length === 0) return;
+
+        // Find the most appropriate deadline (e.g., the earliest one or the first one)
+        const sortedDeadlines = [...email.extractedDeadlines].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const primaryDeadline = sortedDeadlines[0];
+
+        const confirmAdd = window.confirm(`Do you want to add this deadline to your Google Calendar?\n\nEvent: ${primaryDeadline.text || 'Deadline'}\nDate: ${new Date(primaryDeadline.date).toLocaleDateString()}`);
+        if (!confirmAdd) return;
+
+        try {
+            const payload = {
+                summary: `Deadline: ${primaryDeadline.text || email.subject.substring(0, 30)}`,
+                description: `Email Context: ${email.subject}\n\nFrom: ${email.sender}\n\nLink: https://mail.google.com/mail/u/0/#inbox/${email.googleMessageId}\n\nSnippet: ${email.snippet}`,
+                date: primaryDeadline.date
+            };
+
+            const res = await axios.post('http://localhost:5000/api/calendar/add-event', payload, { withCredentials: true });
+            if (res.data.success) {
+                alert('Event added to Google Calendar securely!');
+            }
+        } catch (err) {
+            console.error('Error adding to calendar', err);
+            alert('Failed to add event to Calendar.');
+        }
     };
 
     // --- Filter & Sort Logic ---
@@ -91,6 +188,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchUser();
+        fetchLabelCounts(); // Fetch Sent/Draft counts on mount
         // Load whatever we have instantly, then sync in background
         fetchEmails().then(() => {
             syncEmails();
@@ -101,10 +199,13 @@ const Dashboard = () => {
         let result = [...emails];
 
         // 1. Sidebar Tabs Logic
-        if (activeTab === 'urgent') {
-            result = result.filter(e => e.urgency === 'High' || e.urgency === 'Critical');
-        } else if (activeTab === 'deadlines') {
-            result = result.filter(e => e.extractedDeadlines && e.extractedDeadlines.length > 0);
+        if (activeTab === 'priority') {
+            // Show emails that are urgent (High/Critical) OR have deadlines
+            result = result.filter(e =>
+                e.urgency === 'High' ||
+                e.urgency === 'Critical' ||
+                (e.extractedDeadlines && e.extractedDeadlines.length > 0)
+            );
         }
         // 'inbox' takes all (so far)
 
@@ -161,28 +262,30 @@ const Dashboard = () => {
                         <span className="label">Inbox</span>
                         <span className="count">{emails.length}</span>
                     </button>
-                    <button className={`nav-item ${activeTab === 'urgent' ? 'active' : ''}`} onClick={() => setActiveTab('urgent')}>
-                        <span className="icon">⚠</span>
-                        <span className="label">Urgent</span>
-                        <span className="count">{emails.filter(e => e.urgency === 'High' || e.urgency === 'Critical').length}</span>
+                    <button className={`nav-item ${activeTab === 'priority' ? 'active' : ''}`} onClick={() => setActiveTab('priority')}>
+                        <span className="icon">⚡</span>
+                        <span className="label">Priority</span>
+                        <span className="count">{
+                            new Set(
+                                emails
+                                    .filter(e =>
+                                        e.urgency === 'High' ||
+                                        e.urgency === 'Critical' ||
+                                        (e.extractedDeadlines && e.extractedDeadlines.length > 0)
+                                    )
+                                    .map(e => e._id)
+                            ).size
+                        }</span>
                     </button>
-                    <button className={`nav-item ${activeTab === 'deadlines' ? 'active' : ''}`} onClick={() => setActiveTab('deadlines')}>
-                        <span className="icon">🕒</span>
-                        <span className="label">Deadlines</span>
-                        <span className="count">{emails.filter(e => e.extractedDeadlines && e.extractedDeadlines.length > 0).length}</span>
-                    </button>
-                    <button className="nav-item">
+                    <button className={`nav-item ${activeTab === 'sent' ? 'active' : ''}`} onClick={() => switchTab('sent')}>
                         <span className="icon">✈</span>
                         <span className="label">Sent</span>
+                        {labelCounts.sent !== null && <span className="count">{labelCounts.sent}</span>}
                     </button>
-                    <button className="nav-item">
+                    <button className={`nav-item ${activeTab === 'drafts' ? 'active' : ''}`} onClick={() => switchTab('drafts')}>
                         <span className="icon">📄</span>
                         <span className="label">Drafts</span>
-                    </button>
-                    <button className="nav-item">
-                        <span className="icon">📦</span>
-                        <span className="label">Archive</span>
-                        <span className="count">29</span>
+                        {labelCounts.drafts !== null && <span className="count">{labelCounts.drafts}</span>}
                     </button>
                 </nav>
 
@@ -227,7 +330,10 @@ const Dashboard = () => {
 
                 <div className="content-area">
                     <div className="content-header">
-                        <h1>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+                        <h1>{
+                            activeTab === 'priority' ? 'Priority'
+                                : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
+                        }</h1>
 
                         <div className="view-actions">
                             {/* Filter Button & Dropdown */}
@@ -318,49 +424,94 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="email-list">
-                        {filteredEmails.map(email => (
-                            <div key={email._id} className={`email-item urgency-${email.urgency?.toLowerCase() || 'low'}`} onClick={() => openEmail(email)}>
-                                <div className="email-checkbox" onClick={(e) => e.stopPropagation()}>
-                                    <input type="checkbox" />
+                    {/* ── MAILBOX VIEW (Sent / Drafts / Archive) ── */}
+                    {MAILBOX_TABS.includes(activeTab) ? (
+                        <div className="email-list">
+                            {mailboxLoading && (
+                                <div className="empty-state">
+                                    <div className="loading-spinner" style={{ margin: '0 auto 12px' }}></div>
+                                    <p>Loading {activeTab}...</p>
                                 </div>
-                                <div className="email-content">
-                                    <div className="email-header">
-                                        <div className="sender-info">
-                                            <span className="sender-name">{email.sender}</span>
-                                            {email.urgency === 'Critical' && <span className="status-dot"></span>}
+                            )}
+                            {!mailboxLoading && mailboxEmails.length === 0 && (
+                                <div className="empty-state">
+                                    <p>No emails in {activeTab}.</p>
+                                </div>
+                            )}
+                            {!mailboxLoading && mailboxEmails.map(email => (
+                                <div key={email._id} className="email-item urgency-low" onClick={() => openEmail(email)}>
+                                    <div className="email-checkbox" onClick={(e) => e.stopPropagation()}>
+                                        <input type="checkbox" />
+                                    </div>
+                                    <div className="email-content">
+                                        <div className="email-header">
+                                            <div className="sender-info">
+                                                <span className="sender-name">
+                                                    {activeTab === 'sent'
+                                                        ? `To: ${decodeHtmlEntities(email.recipient)}`
+                                                        : decodeHtmlEntities(email.sender)}
+                                                </span>
+                                            </div>
+                                            <span className="email-time">
+                                                {new Date(email.date).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </div>
-                                        <span className="email-time">{new Date(email.date).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                    </div>
-
-                                    <h3 className="email-subject">
-                                        {email.urgency === 'Critical' && <span className="urgent-prefix">URGENT:</span>} {email.subject}
-                                    </h3>
-
-                                    <p className="email-snippet">{email.snippet}</p>
-
-                                    <div className="email-tags">
-                                        {(email.urgency === 'High' || email.urgency === 'Critical') && (
-                                            <span className="tag tag-critical">
-                                                <span className="icon">⚠</span> {email.urgency.toUpperCase()} PRIORITY
-                                            </span>
-                                        )}
-                                        {email.extractedDeadlines && email.extractedDeadlines.map((d, i) => (
-                                            <span key={i} className="tag tag-due">
-                                                <span className="icon">🕒</span> DUE: {new Date(d.date).toLocaleDateString()}
-                                            </span>
-                                        ))}
-                                        <span className="tag tag-category">#{email.category}</span>
+                                        <h3 className="email-subject">{decodeHtmlEntities(email.subject)}</h3>
+                                        <p className="email-snippet">{decodeHtmlEntities(email.snippet)}</p>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                        {filteredEmails.length === 0 && (
-                            <div className="empty-state">
-                                <p>No emails found matching your filters.</p>
-                            </div>
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        /* ── INBOX / PRIORITY VIEW ── */
+                        <div className="email-list">
+                            {filteredEmails.map(email => (
+                                <div key={email._id} className={`email-item urgency-${email.urgency?.toLowerCase() || 'low'}`} onClick={() => openEmail(email)}>
+                                    <div className="email-checkbox" onClick={(e) => e.stopPropagation()}>
+                                        <input type="checkbox" />
+                                    </div>
+                                    <div className="email-content">
+                                        <div className="email-header">
+                                            <div className="sender-info">
+                                                <span className="sender-name">{email.sender}</span>
+                                                {email.urgency === 'Critical' && <span className="status-dot"></span>}
+                                            </div>
+                                            <span className="email-time">{new Date(email.date).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+
+                                        <h3 className="email-subject">
+                                            {email.urgency === 'Critical' && <span className="urgent-prefix">URGENT:</span>} {decodeHtmlEntities(email.subject)}
+                                        </h3>
+
+                                        <p className="email-snippet">{decodeHtmlEntities(email.snippet)}</p>
+
+                                        <div className="email-tags">
+                                            {(email.urgency === 'High' || email.urgency === 'Critical') && (
+                                                <span className="tag tag-critical">
+                                                    <span className="icon">⚠</span> {email.urgency.toUpperCase()} PRIORITY
+                                                </span>
+                                            )}
+                                            {email.extractedDeadlines && email.extractedDeadlines.map((d, i) => {
+                                                const { label, status } = deadlineTag(d.date);
+                                                return (
+                                                    <span key={i} className={`tag tag-deadline-${status}`}>
+                                                        <span className="icon">{status === 'expired' ? '🔒' : '🕒'}</span>
+                                                        {label}
+                                                    </span>
+                                                );
+                                            })}
+                                            <span className="tag tag-category">#{email.category}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {filteredEmails.length === 0 && (
+                                <div className="empty-state">
+                                    <p>No emails found matching your filters.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Email Modal */}
@@ -369,7 +520,8 @@ const Dashboard = () => {
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header">
                                 <div className="modal-title-section">
-                                    <h2>{selectedEmail.subject}</h2>
+                                    <h2>{decodeHtmlEntities(selectedEmail.subject)}
+                                    </h2>
                                     <div className="modal-meta">
                                         <span className="modal-sender">From: <strong>{selectedEmail.sender}</strong></span>
                                         <span className="modal-date">{new Date(selectedEmail.date).toLocaleString()}</span>
@@ -379,8 +531,34 @@ const Dashboard = () => {
                             </div>
                             <div className="modal-body">
                                 <div className="email-tags" style={{ marginBottom: '20px' }}>
-                                    <span className={`tag tag-${selectedEmail.urgency.toLowerCase()}`}>Priority: {selectedEmail.urgency}</span>
-                                    <span className="tag tag-category">Category: {selectedEmail.category}</span>
+                                    {/* Urgency / category only exist for inbox emails */}
+                                    {selectedEmail.urgency && (
+                                        <span className={`tag tag-${selectedEmail.urgency.toLowerCase()}`}>Priority: {selectedEmail.urgency}</span>
+                                    )}
+                                    {selectedEmail.category && (
+                                        <span className="tag tag-category">Category: {selectedEmail.category}</span>
+                                    )}
+                                    {selectedEmail.recipient && (
+                                        <span className="tag tag-category">To: {decodeHtmlEntities(selectedEmail.recipient)}</span>
+                                    )}
+                                    {selectedEmail.extractedDeadlines && selectedEmail.extractedDeadlines.map((d, i) => {
+                                        const { label, status } = deadlineTag(d.date);
+                                        return (
+                                            <span key={i} className={`tag tag-deadline-${status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                                <span className="icon">{status === 'expired' ? '🔒' : '🕒'}</span> {label}
+                                            </span>
+                                        );
+                                    })}
+                                    {selectedEmail.extractedDeadlines && selectedEmail.extractedDeadlines.length > 0 && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); addToCalendar(selectedEmail); }}
+                                            className="scan-btn"
+                                            style={{ padding: '4px 10px', fontSize: '0.8rem', marginLeft: '10px' }}
+                                            title="Add Primary Deadline to Google Calendar"
+                                        >
+                                            📅 Add to Calendar
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="email-body-content" dangerouslySetInnerHTML={{ __html: selectedEmail.body || selectedEmail.snippet }} />
                             </div>

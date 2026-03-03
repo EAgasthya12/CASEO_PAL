@@ -8,7 +8,6 @@ class DateExtractor:
         try:
             self.nlp = spacy.load("en_core_web_sm")
         except OSError:
-            # Fallback or need to download
             from spacy.cli import download
             download("en_core_web_sm")
             self.nlp = spacy.load("en_core_web_sm")
@@ -20,51 +19,51 @@ class DateExtractor:
                 text = text[:1024]
 
             doc = self.nlp(text)
-            deadlines = []
-            
+            raw_deadlines = []
+
             # Extract DATE and TIME entities
             for ent in doc.ents:
                 if ent.label_ in ["DATE", "TIME"]:
                     parsed_date = dateparser.parse(ent.text)
                     if parsed_date:
-                        deadlines.append({
+                        raw_deadlines.append({
                             "text": ent.text,
                             "date": parsed_date.isoformat(),
                             "label": ent.label_
                         })
-            
-            # Urgency detection
-            urgency = "Low"
-            # ... (rest of logic is same, but indentation shifts if I wrap whole thing, 
-            # let's just wrap the dangerous part and return effectively)
-            
-            # ... actually, let's keep it simple and just return what we have
+
+            # ── Deduplication by calendar day ──────────────────────────────
+            # spaCy often extracts the same date in multiple formats
+            # e.g. "March 4" and "3/4/2026" both resolve to the same day.
+            # Keep only the first occurrence of each unique YYYY-MM-DD day.
+            seen_days = set()
+            deadlines = []
+            for d in raw_deadlines:
+                day_key = d["date"][:10]   # "YYYY-MM-DD"
+                if day_key not in seen_days:
+                    seen_days.add(day_key)
+                    deadlines.append(d)
+            # ───────────────────────────────────────────────────────────────
+
         except Exception as e:
             print(f"Extraction error: {e}")
             return [], "Low"
 
-        # Continue with urgency detection (which is safe)
-        urgency = "Low"
-        if deadlines:
-            today = datetime.now()
-            # ...
-        
-        # Urgency detection
+        # Urgency detection based on closest upcoming deadline
         urgency = "Low"
         if deadlines:
             today = datetime.now()
             min_days = float('inf')
-            
+
             for d in deadlines:
                 dt = datetime.fromisoformat(d['date'])
-                # Calculate days difference (ignoring time for simplicity logic)
                 diff = (dt - today).days
                 if diff < min_days:
                     min_days = diff
-            
+
             if min_days < 3:
                 urgency = "High"
             elif min_days < 7:
                 urgency = "Medium"
-        
+
         return deadlines, urgency
