@@ -7,6 +7,10 @@ const UserSchema = new mongoose.Schema({
     accessToken: { type: String },
     refreshToken: { type: String },
     photo: { type: String },
+    categories: {
+        type: [String],
+        default: ['Academic', 'Internship', 'Job', 'Event', 'Personal']
+    },
     createdAt: { type: Date, default: Date.now },
 });
 

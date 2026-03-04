@@ -18,11 +18,15 @@ const logError = (message, data) => {
 /**
  * Sends text to Python service for classification and extraction.
  * @param {string} text - The email body or snippet.
+ * @param {string[]} userCategories - The user's current category list (for smart matching).
  * @returns {Promise<Object>} - The intelligence result.
  */
-const analyzeText = async (text) => {
+const analyzeText = async (text, userCategories = []) => {
     try {
-        const response = await axios.post(`${PYTHON_API_URL}/classify`, { text });
+        const response = await axios.post(`${PYTHON_API_URL}/classify`, {
+            text,
+            user_categories: userCategories
+        });
         return response.data;
     } catch (error) {
         console.error('Error calling Python Intelligence Layer:', error.message);
@@ -45,3 +49,4 @@ const analyzeText = async (text) => {
 };
 
 module.exports = { analyzeText };
+

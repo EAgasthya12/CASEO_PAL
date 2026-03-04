@@ -463,3 +463,867 @@ Data: {
   "response": "No response"
 }
 
+[2026-03-03T16:09:51.461Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Security alert\nA new sign-in on OnePlus Nord CE 3 Lite 5G 22r11a0596@gcet.edu.in We noticed a new si",
+  "textLength": 209,
+  "response": "No response"
+}
+
+[2026-03-03T16:09:51.517Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Security alert\nA new sign-in on OnePlus Nord CE 3 Lite 5G 22r11a0596@gcet.edu.in We noticed a new si",
+  "textLength": 209,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.683Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "G Karthik - Technical Lead reacted to this post: Leveling up again!…\nLeveling up again!… ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 270,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.715Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "I want to connect\nNikhil, Project Engineer from Wipro is waiting for your response ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 218,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.729Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Kotlin Heroes: Episode 14 [100 t-shirts, money prizes!]\nAttention! The round starts on Monday, March",
+  "textLength": 254,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.740Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add Suman Rani - Angel guidence\nAngel guidence at Tarot reader ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 253,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.792Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 3 new invitations\nYou have 3 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.795Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 3 new invitations\nYou have 3 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.805Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "View Mehak Vijay Chawla’s post and your next steps\nNew post: “The day I stopped… ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 252,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.809Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Kotlin Heroes: Episode 14 [100 t-shirts, money prizes!]\nAttention! The round starts on Monday, March",
+  "textLength": 254,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.811Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "G Karthik - Technical Lead reacted to this post: Leveling up again!…\nLeveling up again!… ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 270,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.823Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "View Mehak Vijay Chawla’s post and your next steps\nNew post: “The day I stopped… ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 252,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.827Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "I want to connect\nNikhil, Project Engineer from Wipro is waiting for your response ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 218,
+  "response": "No response"
+}
+
+[2026-03-03T17:30:26.831Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add Suman Rani - Angel guidence\nAngel guidence at Tarot reader ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 253,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.789Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Kotlin Heroes: Episode 14 [100 t-shirts, money prizes!]\nAttention! The round starts on Monday, March",
+  "textLength": 254,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.807Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, you have access to daily help from Gemini\nDiscover new ways to use Gemini throu",
+  "textLength": 263,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.810Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add Sairi M - Senior Firewall Engineer\nNetwork Security Engineer ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 261,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.813Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 2 new invitations\nYou have 2 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.827Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, you have access to daily help from Gemini\nDiscover new ways to use Gemini throu",
+  "textLength": 263,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.829Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Kotlin Heroes: Episode 14 [100 t-shirts, money prizes!]\nAttention! The round starts on Monday, March",
+  "textLength": 254,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.832Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add Sairi M - Senior Firewall Engineer\nNetwork Security Engineer ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 261,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.834Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 2 new invitations\nYou have 2 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.869Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, you’re getting noticed\nSee who&#39;s looking at your profile ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 245,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.871Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 2 new invitations\nYou have 2 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.874Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Microsoft is hiring a Software Engineer\nPosted on 2/25/2026 ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 241,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.876Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Security alert for aluri67@gmail.com\nThis is a copy of a security alert sent to aluri67@gmail.com. a",
+  "textLength": 238,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.878Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Your Google Account was recovered successfully\nThis is a copy of a security alert sent to aluri67@gm",
+  "textLength": 244,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.888Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, you’re getting noticed\nSee who&#39;s looking at your profile ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 245,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.891Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 2 new invitations\nYou have 2 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.892Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Microsoft is hiring a Software Engineer\nPosted on 2/25/2026 ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 241,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.894Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Security alert for aluri67@gmail.com\nThis is a copy of a security alert sent to aluri67@gmail.com. a",
+  "textLength": 238,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.897Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Your Google Account was recovered successfully\nThis is a copy of a security alert sent to aluri67@gm",
+  "textLength": 244,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.927Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "New jobs similar to Oracle Fusion SCM – Trainee / Junior Consultant at eAppSys\nJobs similar to Oracl",
+  "textLength": 279,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.930Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Software Engineer II- Full Stack at Electronic Arts and 10 more jobs in Hyderābād for you. Apply Now",
+  "textLength": 303,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.932Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "GCET Hyderabad and others share their thoughts on LinkedIn\nVijay Bhaskar&#39;s career reflects stron",
+  "textLength": 260,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.935Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "I want to connect\nBandreddi, Cyber Security Intern from Plasmid is waiting for your response ͏ ͏ ͏ ͏",
+  "textLength": 218,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.937Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 1 new invitation\nYou have 1 new invitation ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.950Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "New jobs similar to Oracle Fusion SCM – Trainee / Junior Consultant at eAppSys\nJobs similar to Oracl",
+  "textLength": 279,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.952Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Software Engineer II- Full Stack at Electronic Arts and 10 more jobs in Hyderābād for you. Apply Now",
+  "textLength": 303,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.954Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "GCET Hyderabad and others share their thoughts on LinkedIn\nVijay Bhaskar&#39;s career reflects stron",
+  "textLength": 260,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.957Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "I want to connect\nBandreddi, Cyber Security Intern from Plasmid is waiting for your response ͏ ͏ ͏ ͏",
+  "textLength": 218,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.959Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 1 new invitation\nYou have 1 new invitation ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.991Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "View Mehak Vijay Chawla’s post and your next steps\nNew post: “The day I stopped… ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 252,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.995Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Same passion, bigger stage : The Big Code is here and you might still be eligible\nHello there! Hope ",
+  "textLength": 283,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:36.998Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, follow Sarang Kulkarni - Software Engineer at Microsoft\nSee your recommendation",
+  "textLength": 278,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.001Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "New Offline Centre in Your City!\nPicture the moment your parents proudly say, “Our child is an IITia",
+  "textLength": 232,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.004Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "LeetCode Weekly Digest\nHi LeetCoder! Landing a 6-month SDE internship with a PPO is the kind of mile",
+  "textLength": 219,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.025Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "View Mehak Vijay Chawla’s post and your next steps\nNew post: “The day I stopped… ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 252,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.029Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Same passion, bigger stage : The Big Code is here and you might still be eligible\nHello there! Hope ",
+  "textLength": 283,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.033Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, follow Sarang Kulkarni - Software Engineer at Microsoft\nSee your recommendation",
+  "textLength": 278,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.037Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "New Offline Centre in Your City!\nPicture the moment your parents proudly say, “Our child is an IITia",
+  "textLength": 232,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.040Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "LeetCode Weekly Digest\nHi LeetCoder! Landing a 6-month SDE internship with a PPO is the kind of mile",
+  "textLength": 219,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.079Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add C.V. Chaitanya 💬\nStudent at Geethanjali College of Engineering and Technol",
+  "textLength": 243,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.084Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Software Engineering role at Microsoft: Actively recruiting\nPosted on 2/25/2026 ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 261,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.089Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "I want to connect\nNikhil, Project Engineer from Wipro is waiting for your response ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 218,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.094Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, I’m still waiting for your response\n👤 Laya vardhan Nallamudi is waiting for yo",
+  "textLength": 258,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.098Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Codeforces Round 1084 (Div. 3)\nHello pallavi_2026, You are welcome to register and compete in Codefo",
+  "textLength": 226,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.120Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add C.V. Chaitanya 💬\nStudent at Geethanjali College of Engineering and Technol",
+  "textLength": 243,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.126Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Software Engineering role at Microsoft: Actively recruiting\nPosted on 2/25/2026 ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 261,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.129Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "I want to connect\nNikhil, Project Engineer from Wipro is waiting for your response ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 218,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.132Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, I’m still waiting for your response\n👤 Laya vardhan Nallamudi is waiting for yo",
+  "textLength": 258,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.136Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Codeforces Round 1084 (Div. 3)\nHello pallavi_2026, You are welcome to register and compete in Codefo",
+  "textLength": 226,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.164Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "28 profile views\nYou&#39;re getting noticed ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 217,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.165Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "New login on CodeChef\nLogin Alert: New IP Address Detected Dear pallavi_2026, We have detected a log",
+  "textLength": 220,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.167Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "G Karthik - Technical Lead reacted to this post: Leveling up again!…\nLeveling up again!… ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 270,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.170Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 1 new message\nYou have 1 new message ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 223,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.173Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Confirm Your Spot\nConfirm Your Seat INTRODUCTORY SESSION | DATA ANALYST Hi Pallavi Nagalakshmi Aluri",
+  "textLength": 222,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.184Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "28 profile views\nYou&#39;re getting noticed ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 217,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.188Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "New login on CodeChef\nLogin Alert: New IP Address Detected Dear pallavi_2026, We have detected a log",
+  "textLength": 220,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.189Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "G Karthik - Technical Lead reacted to this post: Leveling up again!…\nLeveling up again!… ͏ ͏ ͏ ͏ ͏ ͏",
+  "textLength": 270,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.192Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 1 new message\nYou have 1 new message ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 223,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.193Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Confirm Your Spot\nConfirm Your Seat INTRODUCTORY SESSION | DATA ANALYST Hi Pallavi Nagalakshmi Aluri",
+  "textLength": 222,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.221Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Get 20% off* on your first Parcel delivery\nSend smarter. Send faster. Send with Uber Parcel From for",
+  "textLength": 242,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.224Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Your On-Demand Parcel is here\nFast, reliable deliveries at your fingertips — just like your rides. ͏",
+  "textLength": 230,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.226Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Codeforces Round 1083\nHello pallavi_2026, I&#39;m glad to invite you to take part in Codeforces Roun",
+  "textLength": 222,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.229Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add Suman Rani - Angel guidence\nAngel guidence at Tarot reader ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 253,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.234Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Educational Codeforces Round 187 (Rated for Div. 2)\nHello pallavi_2026, The series of Educational Ro",
+  "textLength": 248,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.247Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Get 20% off* on your first Parcel delivery\nSend smarter. Send faster. Send with Uber Parcel From for",
+  "textLength": 242,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.249Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Your On-Demand Parcel is here\nFast, reliable deliveries at your fingertips — just like your rides. ͏",
+  "textLength": 230,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.251Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Codeforces Round 1083\nHello pallavi_2026, I&#39;m glad to invite you to take part in Codeforces Roun",
+  "textLength": 222,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.254Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Pallavi Nagalakshmi, add Suman Rani - Angel guidence\nAngel guidence at Tarot reader ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 253,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.256Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Educational Codeforces Round 187 (Rated for Div. 2)\nHello pallavi_2026, The series of Educational Ro",
+  "textLength": 248,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.285Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "February 2026\nWhat&#39;s on your list of health care staples? Vitamin C, tissues, cough drops, an… ͏",
+  "textLength": 214,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.288Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "TECHNOLOGICS R&D Lab – Inviting Application from 2025 Passing Graduates Hiring with Industry Finishi",
+  "textLength": 310,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.290Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Kambhampati Advaith - Vice President reacted to this post: 𝐌𝐲 𝐫𝐞𝐬𝐮𝐦𝐞 𝐠𝐨𝐭…\n𝐌𝐲 𝐫𝐞𝐬𝐮𝐦",
+  "textLength": 296,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.291Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 6 new invitations\nYou have 6 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.294Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "View Mehak Vijay Chawla’s post and your next steps\nAssociate Youth Member at Norman Nicholson Societ",
+  "textLength": 251,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.477Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "February 2026\nWhat&#39;s on your list of health care staples? Vitamin C, tissues, cough drops, an… ͏",
+  "textLength": 214,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.479Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "TECHNOLOGICS R&D Lab – Inviting Application from 2025 Passing Graduates Hiring with Industry Finishi",
+  "textLength": 310,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.481Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Kambhampati Advaith - Vice President reacted to this post: 𝐌𝐲 𝐫𝐞𝐬𝐮𝐦𝐞 𝐠𝐨𝐭…\n𝐌𝐲 𝐫𝐞𝐬𝐮𝐦",
+  "textLength": 296,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.484Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "You have 6 new invitations\nYou have 6 new invitations ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ͏ ",
+  "textLength": 227,
+  "response": "No response"
+}
+
+[2026-03-03T17:35:37.486Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "View Mehak Vijay Chawla’s post and your next steps\nAssociate Youth Member at Norman Nicholson Societ",
+  "textLength": 251,
+  "response": "No response"
+}
+
+[2026-03-04T04:02:25.907Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Fwd: Document from Guruvelli Ramya\n---------- Forwarded message --------- From: 22R11A05B4 GURUVELLI",
+  "textLength": 236,
+  "response": "No response"
+}
+
+[2026-03-04T04:02:25.916Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Security alert\nA new sign-in on Windows 22r11a0596@gcet.edu.in We noticed a new sign-in to your Goog",
+  "textLength": 210,
+  "response": "No response"
+}
+
+[2026-03-04T04:02:25.919Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Security alert\nA new sign-in on Windows 22r11a0596@gcet.edu.in We noticed a new sign-in to your Goog",
+  "textLength": 210,
+  "response": "No response"
+}
+
+[2026-03-04T04:02:25.920Z] Error calling Python Intelligence Layer
+Data: {
+  "message": "read ECONNRESET",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "(No Subject)\n",
+  "textLength": 13,
+  "response": "No response"
+}
+

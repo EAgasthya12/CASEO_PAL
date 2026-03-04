@@ -42,6 +42,7 @@ const Dashboard = () => {
     const [activeTab, setActiveTab] = useState('inbox');
     const [user, setUser] = useState(null);
     const [selectedEmail, setSelectedEmail] = useState(null);
+    const [userCategories, setUserCategories] = useState(['Academic', 'Internship', 'Job', 'Event', 'Personal']);
 
     // Mailbox state for Sent / Drafts / Archive (fetched live from Gmail)
     const [mailboxEmails, setMailboxEmails] = useState([]);
@@ -60,10 +61,16 @@ const Dashboard = () => {
         priorityOrder: 'high-low' // 'high-low' or 'low-high'
     });
 
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState(null); // null = not searching
+    const [searchLoading, setSearchLoading] = useState(false);
+
     const fetchUser = async () => {
         try {
             const res = await axios.get('http://localhost:5000/auth/current_user', { withCredentials: true });
             setUser(res.data);
+            if (res.data.categories) setUserCategories(res.data.categories);
         } catch (err) {
             console.error("Error fetching user:", err);
         }
@@ -90,13 +97,70 @@ const Dashboard = () => {
         }
     };
 
+    // Debounced search — fires 400ms after the user stops typing
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults(null);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const res = await axios.get(
+                    `http://localhost:5000/api/emails/search?q=${encodeURIComponent(searchQuery.trim())}`,
+                    { withCredentials: true }
+                );
+                setSearchResults(res.data.emails || []);
+            } catch (err) {
+                console.error('Search error:', err);
+                setSearchResults([]);
+            }
+            setSearchLoading(false);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     const syncEmails = async () => {
         setLoading(true);
         try {
-            await axios.post('http://localhost:5000/api/emails/sync', {}, { withCredentials: true });
+            // Fire scan — server responds immediately, processes in background
+            await axios.post('http://localhost:5000/api/emails/reclassify', {}, { withCredentials: true });
+            // Refresh emails immediately with what's already in DB
             await fetchEmails();
+
+            // Poll every 3s until scan finishes, refreshing the list each time
+            const poll = setInterval(async () => {
+                try {
+                    const status = await axios.get('http://localhost:5000/api/emails/scan-status', { withCredentials: true });
+                    await fetchEmails(); // refresh email list as new ones get processed
+                    if (!status.data.running) {
+                        clearInterval(poll);
+                        setLoading(false);
+                    }
+                } catch {
+                    clearInterval(poll);
+                    setLoading(false);
+                }
+            }, 3000);
         } catch (err) {
-            console.error("Error syncing emails:", err);
+            console.error('Error syncing emails:', err);
+            setLoading(false);
+        }
+    };
+
+    const reclassifyEmails = async () => {
+        const confirmed = window.confirm(
+            'This will delete all stored emails and re-classify them from scratch using Gemini AI.\n\nThis may take a few minutes. Continue?'
+        );
+        if (!confirmed) return;
+        setLoading(true);
+        try {
+            const res = await axios.post('http://localhost:5000/api/emails/reclassify', {}, { withCredentials: true });
+            await fetchEmails();
+            alert(`Re-classification complete! ${res.data.reclassified} emails processed.`);
+        } catch (err) {
+            console.error('Error re-classifying emails:', err);
+            alert('Re-classification failed. Check console.');
         }
         setLoading(false);
     };
@@ -136,9 +200,17 @@ const Dashboard = () => {
     const addToCalendar = async (email) => {
         if (!email.extractedDeadlines || email.extractedDeadlines.length === 0) return;
 
-        // Find the most appropriate deadline (e.g., the earliest one or the first one)
-        const sortedDeadlines = [...email.extractedDeadlines].sort((a, b) => new Date(a.date) - new Date(b.date));
-        const primaryDeadline = sortedDeadlines[0];
+        const now = new Date();
+
+        // Pick the earliest deadline that hasn't passed yet
+        const upcomingDeadlines = email.extractedDeadlines
+            .filter(d => new Date(d.date) >= now)
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Fall back to the latest deadline overall if all have passed (shouldn't happen since button is hidden for all-expired)
+        const primaryDeadline = upcomingDeadlines.length > 0
+            ? upcomingDeadlines[0]
+            : [...email.extractedDeadlines].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
         const confirmAdd = window.confirm(`Do you want to add this deadline to your Google Calendar?\n\nEvent: ${primaryDeadline.text || 'Deadline'}\nDate: ${new Date(primaryDeadline.date).toLocaleDateString()}`);
         if (!confirmAdd) return;
@@ -188,11 +260,8 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchUser();
-        fetchLabelCounts(); // Fetch Sent/Draft counts on mount
-        // Load whatever we have instantly, then sync in background
-        fetchEmails().then(() => {
-            syncEmails();
-        });
+        fetchLabelCounts();
+        fetchEmails(); // Just load what's in DB instantly — no auto-scan
     }, []);
 
     const processEmails = () => {
@@ -245,8 +314,9 @@ const Dashboard = () => {
         return result;
     };
 
-    const filteredEmails = processEmails();
-    const categories = ['Academic', 'Internship', 'Personal', 'Event'];
+    // When a search query is active, show search results instead of the regular inbox
+    const filteredEmails = searchQuery.trim() ? (searchResults ?? []) : processEmails();
+    const categories = userCategories;
 
     return (
         <div className="dashboard-layout">
@@ -317,7 +387,18 @@ const Dashboard = () => {
                 <header className="top-bar">
                     <div className="search-bar">
                         <span className="search-icon">🔍</span>
-                        <input type="text" placeholder="Ask your email (e.g., 'What deadlines do I have?')" />
+                        <input
+                            type="text"
+                            placeholder="Search emails... or try 'from:superset'"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '16px', padding: '0 4px' }}
+                            >✕</button>
+                        )}
                     </div>
                     <div className="top-actions">
                         <button className="icon-btn">🔔</button>
@@ -330,10 +411,15 @@ const Dashboard = () => {
 
                 <div className="content-area">
                     <div className="content-header">
-                        <h1>{
-                            activeTab === 'priority' ? 'Priority'
-                                : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
-                        }</h1>
+                        <h1>
+                            {searchQuery
+                                ? searchLoading
+                                    ? 'Searching...'
+                                    : `${searchResults?.length ?? 0} result${searchResults?.length !== 1 ? 's' : ''} for "${searchQuery}"`
+                                : activeTab === 'priority' ? 'Priority'
+                                    : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
+                            }
+                        </h1>
 
                         <div className="view-actions">
                             {/* Filter Button & Dropdown */}
@@ -531,13 +617,39 @@ const Dashboard = () => {
                             </div>
                             <div className="modal-body">
                                 <div className="email-tags" style={{ marginBottom: '20px' }}>
-                                    {/* Urgency / category only exist for inbox emails */}
+                                    {/* Urgency only exists for inbox emails */}
                                     {selectedEmail.urgency && (
                                         <span className={`tag tag-${selectedEmail.urgency.toLowerCase()}`}>Priority: {selectedEmail.urgency}</span>
                                     )}
                                     {selectedEmail.category && (
-                                        <span className="tag tag-category">Category: {selectedEmail.category}</span>
+                                        <div className="modal-category-wrapper">
+                                            <span className="tag tag-category">#{selectedEmail.category}</span>
+                                            <select
+                                                className="modal-category-select"
+                                                value={selectedEmail.category}
+                                                onChange={async (e) => {
+                                                    const newCat = e.target.value;
+                                                    try {
+                                                        const res = await axios.put(
+                                                            `http://localhost:5000/api/emails/${selectedEmail._id}/category`,
+                                                            { category: newCat },
+                                                            { withCredentials: true }
+                                                        );
+                                                        setSelectedEmail(res.data.email);
+                                                        setEmails(emails.map(em => em._id === selectedEmail._id ? { ...em, category: newCat } : em));
+                                                    } catch (err) {
+                                                        console.error('Failed to update category', err);
+                                                    }
+                                                }}
+                                            >
+                                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                                {!categories.includes(selectedEmail.category) && (
+                                                    <option value={selectedEmail.category}>{selectedEmail.category}</option>
+                                                )}
+                                            </select>
+                                        </div>
                                     )}
+
                                     {selectedEmail.recipient && (
                                         <span className="tag tag-category">To: {decodeHtmlEntities(selectedEmail.recipient)}</span>
                                     )}
@@ -549,16 +661,17 @@ const Dashboard = () => {
                                             </span>
                                         );
                                     })}
-                                    {selectedEmail.extractedDeadlines && selectedEmail.extractedDeadlines.length > 0 && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); addToCalendar(selectedEmail); }}
-                                            className="scan-btn"
-                                            style={{ padding: '4px 10px', fontSize: '0.8rem', marginLeft: '10px' }}
-                                            title="Add Primary Deadline to Google Calendar"
-                                        >
-                                            📅 Add to Calendar
-                                        </button>
-                                    )}
+                                    {selectedEmail.extractedDeadlines &&
+                                        selectedEmail.extractedDeadlines.some(d => deadlineTag(d.date).status !== 'expired') && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); addToCalendar(selectedEmail); }}
+                                                className="scan-btn"
+                                                style={{ padding: '4px 10px', fontSize: '0.8rem', marginLeft: '10px' }}
+                                                title="Add Primary Deadline to Google Calendar"
+                                            >
+                                                📅 Add to Calendar
+                                            </button>
+                                        )}
                                 </div>
                                 <div className="email-body-content" dangerouslySetInnerHTML={{ __html: selectedEmail.body || selectedEmail.snippet }} />
                             </div>
