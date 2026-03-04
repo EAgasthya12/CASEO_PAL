@@ -1,6 +1,161 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import './Dashboard.css';
+
+/**
+ * EmailBodyRenderer
+ * Renders the raw HTML email body inside a sandboxed iframe so that the
+ * email's own inline styles (white backgrounds, black text, etc.) don't
+ * bleed into or break the CASEO dark-mode UI.
+ * A theme-aware stylesheet is injected into the iframe to override the
+ * email's colors while preserving its layout/images.
+ */
+const EmailBodyRenderer = ({ html, plainText, theme }) => {
+    const iframeRef = useRef(null);
+
+    const isDark = theme !== 'light';
+
+    // Colors injected into the iframe depending on theme
+    const bodyBg = isDark ? '#111827' : '#fafbff';
+    const bodyText = isDark ? '#cbd5e1' : '#334155';
+    const linkColor = isDark ? '#818cf8' : '#4f46e5';
+
+    const writeContent = useCallback(() => {
+        const iframe = iframeRef.current;
+        if (!iframe) return;
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!doc) return;
+
+        // Build a clean wrapper: inject our override CSS first, then the email.
+        // We use !important only where needed so email layout still works.
+        const overrideStyle = `
+            html, body {
+                margin: 0 !important;
+                padding: 16px !important;
+                background-color: ${bodyBg} !important;
+                color: ${bodyText} !important;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+                font-size: 14px !important;
+                line-height: 1.75 !important;
+                overflow-x: hidden !important;
+                word-break: break-word !important;
+            }
+            /* Re-colour text that was explicitly set to black/dark in the email */
+            *[style*="color:#000"],
+            *[style*="color: #000"],
+            *[style*="color:black"],
+            *[style*="color: black"],
+            *[style*="color:#1"],
+            *[style*="color:#2"],
+            *[style*="color:#3"],
+            *[style*="color:#333"],
+            *[style*="color: rgb(0"] {
+                color: ${bodyText} !important;
+            }
+            /* Re-colour elements with explicit white/near-white backgrounds */
+            *[style*="background-color:#fff"],
+            *[style*="background-color: #fff"],
+            *[style*="background-color:white"],
+            *[style*="background-color: white"],
+            *[style*="background:#fff"],
+            *[style*="background: #fff"],
+            *[style*="background:white"],
+            *[style*="background-color: rgb(255"],
+            *[style*="background-color:rgb(255"] {
+                background-color: ${bodyBg} !important;
+            }
+            /* Fix tables common in marketing emails */
+            table, td, th {
+                border-color: rgba(255,255,255,0.08) !important;
+                max-width: 100% !important;
+            }
+            img {
+                max-width: 100% !important;
+                height: auto !important;
+                border-radius: 6px;
+                opacity: 0.92;
+            }
+            a {
+                color: ${linkColor} !important;
+                text-decoration: underline !important;
+            }
+            /* Prevent horizontal overflow from wide email containers */
+            table[width], td[width] {
+                width: 100% !important;
+            }
+            /* Hide tracking pixels */
+            img[width="1"], img[height="1"] {
+                display: none !important;
+            }
+        `;
+
+        let content;
+        if (html) {
+            // If the email already has a full <html> document, inject our style
+            // into its <head>; otherwise wrap it.
+            if (/<html/i.test(html)) {
+                content = html.replace(
+                    /(<head[^>]*>)/i,
+                    `$1<style>${overrideStyle}</style>`
+                );
+                // If no <head> tag, add before <body>
+                if (content === html) {
+                    content = html.replace(
+                        /(<body[^>]*>)/i,
+                        `<head><style>${overrideStyle}</style></head>$1`
+                    );
+                }
+            } else {
+                content = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${overrideStyle}</style></head><body>${html}</body></html>`;
+            }
+        } else {
+            // Plain-text fallback
+            const escaped = (plainText || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            content = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${overrideStyle}</style></head><body><pre style="white-space:pre-wrap;margin:0;font-family:inherit">${escaped}</pre></body></html>`;
+        }
+
+        doc.open();
+        doc.write(content);
+        doc.close();
+
+        // Resize iframe to its full content height — no cap so all content is visible.
+        // The modal-body scrolls, so the iframe just needs to be tall enough.
+        const resize = () => {
+            try {
+                const h = doc.documentElement.scrollHeight || doc.body?.scrollHeight || 400;
+                iframe.style.height = h + 'px';
+            } catch (_) { }
+        };
+
+        // Fire immediately, on load, and after images finish loading
+        iframe.onload = () => {
+            resize();
+            // Re-measure after each image inside finishes loading
+            try {
+                const imgs = doc.querySelectorAll('img');
+                imgs.forEach(img => { img.onload = resize; });
+            } catch (_) { }
+        };
+        // Multiple timeouts to catch late-loading content
+        setTimeout(resize, 80);
+        setTimeout(resize, 300);
+        setTimeout(resize, 800);
+    }, [html, plainText, isDark, bodyBg, bodyText, linkColor]);
+
+    useEffect(() => {
+        writeContent();
+    }, [writeContent]);
+
+    return (
+        <iframe
+            ref={iframeRef}
+            title="Email content"
+            className="email-body-iframe"
+            sandbox="allow-same-origin"
+            scrolling="no"
+        />
+    );
+};
 
 // Decodes HTML entities like &#39; → ' and &amp; → &
 // Gmail snippets and subjects often contain HTML-encoded characters.
@@ -12,27 +167,72 @@ const decodeHtmlEntities = (html) => {
 };
 
 /**
- * Returns deadline display info based on whether the date is past, today, or future.
+ * Strips HTML tags from a string and returns plain text.
+ * Used to clean up garbled snippet text that may contain raw HTML.
+ */
+const stripHtml = (html) => {
+    if (!html) return '';
+    const decoded = decodeHtmlEntities(html);
+    // Remove all HTML tags
+    return decoded.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+};
+
+/**
+ * Deduplicates extractedDeadlines by calendar day.
+ * When the same day has multiple times (e.g. "12:00 PM to 1:00 PM"),
+ * keeps only the LATEST time for that day — so only ONE tag shows per date.
+ * @param {Array} deadlines
+ * @returns {Array}
+ */
+const deduplicateDeadlines = (deadlines) => {
+    if (!deadlines || deadlines.length === 0) return [];
+    const byDay = {};
+    for (const d of deadlines) {
+        const dayKey = new Date(d.date).toISOString().slice(0, 10); // YYYY-MM-DD
+        if (!byDay[dayKey]) {
+            byDay[dayKey] = d;
+        } else {
+            // Keep the later time for the same day (e.g., end time of a range)
+            if (new Date(d.date) > new Date(byDay[dayKey].date)) {
+                byDay[dayKey] = d;
+            }
+        }
+    }
+    return Object.values(byDay);
+};
+
+/**
+ * Returns deadline display info based on the exact datetime (including time).
+ * A deadline at 10:00 AM is MISSED after 10:00 AM — not just after midnight.
  * @param {string|Date} dateStr
  * @returns {{ label: string, status: 'expired'|'today'|'upcoming' }}
  */
 const deadlineTag = (dateStr) => {
     const due = new Date(dateStr);
     const now = new Date();
-    // Compare calendar dates only (ignore time)
-    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const diffMs = dueDay - today;
-    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-    // Format as DD-MM-YYYY
+    // Exact comparison — if the deadline moment has passed, it's CLOSED
+    // We say "CLOSED" (not "MISSED") because the user may have already applied/submitted.
+    if (due <= now) {
+        return { label: 'CLOSED', status: 'expired' };
+    }
+
+    // Format date as DD-MM-YYYY
     const dd = String(due.getDate()).padStart(2, '0');
     const mm = String(due.getMonth() + 1).padStart(2, '0');
     const yyyy = due.getFullYear();
     const formatted = `${dd}-${mm}-${yyyy}`;
 
-    if (diffDays < 0) return { label: 'CLOSED', status: 'expired' };
-    if (diffDays === 0) return { label: 'DUE TODAY', status: 'today' };
+    // Check if it's today (even if in the future — e.g., deadline is at 11 PM)
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (dueDay.getTime() === today.getTime()) {
+        // Show the time too so user knows how much time is left today
+        const timeStr = due.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        return { label: `DUE TODAY at ${timeStr}`, status: 'today' };
+    }
+
     return { label: `DUE: ${formatted}`, status: 'upcoming' };
 };
 
@@ -65,6 +265,17 @@ const Dashboard = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState(null); // null = not searching
     const [searchLoading, setSearchLoading] = useState(false);
+
+    // Theme toggle — persisted in localStorage
+    const [theme, setTheme] = useState(() => localStorage.getItem('caseo-theme') || 'dark');
+
+    const toggleTheme = () => {
+        setTheme(prev => {
+            const next = prev === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('caseo-theme', next);
+            return next;
+        });
+    };
 
     const fetchUser = async () => {
         try {
@@ -269,11 +480,12 @@ const Dashboard = () => {
 
         // 1. Sidebar Tabs Logic
         if (activeTab === 'priority') {
-            // Show emails that are urgent (High/Critical) OR have deadlines
+            const now = new Date();
+            // Priority = ONLY emails with at least one upcoming (future) deadline
             result = result.filter(e =>
-                e.urgency === 'High' ||
-                e.urgency === 'Critical' ||
-                (e.extractedDeadlines && e.extractedDeadlines.length > 0)
+                e.extractedDeadlines &&
+                e.extractedDeadlines.length > 0 &&
+                e.extractedDeadlines.some(d => new Date(d.date) > now)
             );
         }
         // 'inbox' takes all (so far)
@@ -319,41 +531,39 @@ const Dashboard = () => {
     const categories = userCategories;
 
     return (
-        <div className="dashboard-layout">
+        <div className="dashboard-layout" data-theme={theme}>
             <aside className="sidebar">
                 <div className="sidebar-header">
                     <div className="logo-icon">C</div>
                     <span className="logo-text">CASEO</span>
                 </div>
 
+                <div className="sidebar-section-label">Mailbox</div>
                 <nav className="sidebar-nav">
                     <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
-                        <span className="icon">I</span>
+                        <span className="icon">📥</span>
                         <span className="label">Inbox</span>
                         <span className="count">{emails.length}</span>
                     </button>
                     <button className={`nav-item ${activeTab === 'priority' ? 'active' : ''}`} onClick={() => setActiveTab('priority')}>
                         <span className="icon">⚡</span>
                         <span className="label">Priority</span>
-                        <span className="count">{
-                            new Set(
-                                emails
-                                    .filter(e =>
-                                        e.urgency === 'High' ||
-                                        e.urgency === 'Critical' ||
-                                        (e.extractedDeadlines && e.extractedDeadlines.length > 0)
-                                    )
-                                    .map(e => e._id)
-                            ).size
-                        }</span>
+                        <span className="count">{(() => {
+                            const now = new Date();
+                            return emails.filter(e =>
+                                e.extractedDeadlines &&
+                                e.extractedDeadlines.length > 0 &&
+                                e.extractedDeadlines.some(d => new Date(d.date) > now)
+                            ).length;
+                        })()}</span>
                     </button>
                     <button className={`nav-item ${activeTab === 'sent' ? 'active' : ''}`} onClick={() => switchTab('sent')}>
-                        <span className="icon">✈</span>
+                        <span className="icon">✈️</span>
                         <span className="label">Sent</span>
                         {labelCounts.sent !== null && <span className="count">{labelCounts.sent}</span>}
                     </button>
                     <button className={`nav-item ${activeTab === 'drafts' ? 'active' : ''}`} onClick={() => switchTab('drafts')}>
-                        <span className="icon">📄</span>
+                        <span className="icon">📝</span>
                         <span className="label">Drafts</span>
                         {labelCounts.drafts !== null && <span className="count">{labelCounts.drafts}</span>}
                     </button>
@@ -401,7 +611,34 @@ const Dashboard = () => {
                         )}
                     </div>
                     <div className="top-actions">
-                        <button className="icon-btn">🔔</button>
+                        <button className="icon-btn" title="Notifications">🔔</button>
+                        {/* Theme Toggle */}
+                        <button
+                            className="icon-btn theme-toggle-btn"
+                            onClick={toggleTheme}
+                            title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+                            aria-label="Toggle theme"
+                        >
+                            {theme === 'dark' ? (
+                                // Sun icon for switching TO light
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="5" />
+                                    <line x1="12" y1="1" x2="12" y2="3" />
+                                    <line x1="12" y1="21" x2="12" y2="23" />
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                                    <line x1="1" y1="12" x2="3" y2="12" />
+                                    <line x1="21" y1="12" x2="23" y2="12" />
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                                </svg>
+                            ) : (
+                                // Moon icon for switching TO dark
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                                </svg>
+                            )}
+                        </button>
                         <button className="scan-btn" onClick={syncEmails} disabled={loading}>
                             {loading ? <div className="loading-spinner"></div> : '⚡'}
                             {loading ? 'Scanning...' : 'Scan Inbox'}
@@ -551,10 +788,15 @@ const Dashboard = () => {
                     ) : (
                         /* ── INBOX / PRIORITY VIEW ── */
                         <div className="email-list">
-                            {filteredEmails.map(email => (
-                                <div key={email._id} className={`email-item urgency-${email.urgency?.toLowerCase() || 'low'}`} onClick={() => openEmail(email)}>
-                                    <div className="email-checkbox" onClick={(e) => e.stopPropagation()}>
-                                        <input type="checkbox" />
+                            {filteredEmails.map((email, idx) => (
+                                <div
+                                    key={email._id}
+                                    className={`email-item urgency-${email.urgency?.toLowerCase() || 'low'}`}
+                                    onClick={() => openEmail(email)}
+                                    style={{ animationDelay: `${Math.min(idx * 0.045, 0.4)}s` }}
+                                >
+                                    <div className="email-sender-avatar-sm">
+                                        {(email.sender || 'U').replace(/[^a-zA-Z]/g, '').charAt(0).toUpperCase()}
                                     </div>
                                     <div className="email-content">
                                         <div className="email-header">
@@ -562,30 +804,42 @@ const Dashboard = () => {
                                                 <span className="sender-name">{email.sender}</span>
                                                 {email.urgency === 'Critical' && <span className="status-dot"></span>}
                                             </div>
-                                            <span className="email-time">{new Date(email.date).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span className="email-time">{new Date(email.date).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
 
                                         <h3 className="email-subject">
                                             {email.urgency === 'Critical' && <span className="urgent-prefix">URGENT:</span>} {decodeHtmlEntities(email.subject)}
                                         </h3>
 
-                                        <p className="email-snippet">{decodeHtmlEntities(email.snippet)}</p>
+                                        <p className="email-snippet">{stripHtml(email.snippet)}</p>
 
                                         <div className="email-tags">
                                             {(email.urgency === 'High' || email.urgency === 'Critical') && (
                                                 <span className="tag tag-critical">
-                                                    <span className="icon">⚠</span> {email.urgency.toUpperCase()} PRIORITY
+                                                    ⚠ {email.urgency.toUpperCase()} PRIORITY
                                                 </span>
                                             )}
-                                            {email.extractedDeadlines && email.extractedDeadlines.map((d, i) => {
-                                                const { label, status } = deadlineTag(d.date);
+                                            {(() => {
+                                                const dl = email.extractedDeadlines;
+                                                if (!dl || dl.length === 0) return null;
+                                                const now = new Date();
+                                                const upcoming = dl
+                                                    .filter(d => new Date(d.date) > now)
+                                                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                                                if (upcoming.length > 0) {
+                                                    const { label, status } = deadlineTag(upcoming[0].date);
+                                                    return (
+                                                        <span className={`tag tag-deadline-${status}`}>
+                                                            🕒 {label}
+                                                        </span>
+                                                    );
+                                                }
                                                 return (
-                                                    <span key={i} className={`tag tag-deadline-${status}`}>
-                                                        <span className="icon">{status === 'expired' ? '🔒' : '🕒'}</span>
-                                                        {label}
+                                                    <span className="tag tag-deadline-expired">
+                                                        🔒 CLOSED
                                                     </span>
                                                 );
-                                            })}
+                                            })()}
                                             <span className="tag tag-category">#{email.category}</span>
                                         </div>
                                     </div>
@@ -604,23 +858,52 @@ const Dashboard = () => {
                 {selectedEmail && (
                     <div className="modal-overlay" onClick={closeEmail}>
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <div className="modal-title-section">
-                                    <h2>{decodeHtmlEntities(selectedEmail.subject)}
-                                    </h2>
-                                    <div className="modal-meta">
-                                        <span className="modal-sender">From: <strong>{selectedEmail.sender}</strong></span>
-                                        <span className="modal-date">{new Date(selectedEmail.date).toLocaleString()}</span>
+
+                            {/* ── Premium Modal Header ── */}
+                            <div className="modal-header-premium">
+                                <div className="modal-header-left">
+                                    <div className="modal-sender-avatar">
+                                        {(selectedEmail.sender || 'U').replace(/[^a-zA-Z]/g, '').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="modal-header-info">
+                                        <h2 className="modal-subject-title">{decodeHtmlEntities(selectedEmail.subject)}</h2>
+                                        <div className="modal-from-row">
+                                            <span className="modal-from-label">From:</span>
+                                            <span className="modal-from-value">{selectedEmail.sender}</span>
+                                        </div>
+                                        {selectedEmail.recipient && (
+                                            <div className="modal-from-row">
+                                                <span className="modal-from-label">To:</span>
+                                                <span className="modal-from-value">{decodeHtmlEntities(selectedEmail.recipient)}</span>
+                                            </div>
+                                        )}
+                                        <div className="modal-from-row">
+                                            <span className="modal-from-label">Date:</span>
+                                            <span className="modal-from-value modal-date-value">
+                                                {new Date(selectedEmail.date).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <button className="close-modal-btn" onClick={closeEmail}>&times;</button>
                             </div>
-                            <div className="modal-body">
-                                <div className="email-tags" style={{ marginBottom: '20px' }}>
-                                    {/* Urgency only exists for inbox emails */}
+
+                            {/* ── Tags & Actions Row ── */}
+                            <div className="modal-tags-bar">
+                                <div className="modal-tags-left">
                                     {selectedEmail.urgency && (
-                                        <span className={`tag tag-${selectedEmail.urgency.toLowerCase()}`}>Priority: {selectedEmail.urgency}</span>
+                                        <span className={`tag tag-${selectedEmail.urgency.toLowerCase()}`}>
+                                            {selectedEmail.urgency === 'Critical' ? '🔥' : selectedEmail.urgency === 'High' ? '⚠️' : selectedEmail.urgency === 'Medium' ? '⬆️' : '🔽'} {selectedEmail.urgency} Priority
+                                        </span>
                                     )}
+                                    {selectedEmail.extractedDeadlines && deduplicateDeadlines(selectedEmail.extractedDeadlines).map((d, i) => {
+                                        const { label, status } = deadlineTag(d.date);
+                                        return (
+                                            <span key={i} className={`tag tag-deadline-${status}`}>
+                                                <span>{status === 'expired' ? '🔒' : '🕒'}</span> {label}
+                                            </span>
+                                        );
+                                    })}
                                     {selectedEmail.category && (
                                         <div className="modal-category-wrapper">
                                             <span className="tag tag-category">#{selectedEmail.category}</span>
@@ -649,31 +932,37 @@ const Dashboard = () => {
                                             </select>
                                         </div>
                                     )}
-
-                                    {selectedEmail.recipient && (
-                                        <span className="tag tag-category">To: {decodeHtmlEntities(selectedEmail.recipient)}</span>
-                                    )}
-                                    {selectedEmail.extractedDeadlines && selectedEmail.extractedDeadlines.map((d, i) => {
-                                        const { label, status } = deadlineTag(d.date);
-                                        return (
-                                            <span key={i} className={`tag tag-deadline-${status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                                <span className="icon">{status === 'expired' ? '🔒' : '🕒'}</span> {label}
-                                            </span>
-                                        );
-                                    })}
+                                </div>
+                                <div className="modal-tags-right">
                                     {selectedEmail.extractedDeadlines &&
-                                        selectedEmail.extractedDeadlines.some(d => deadlineTag(d.date).status !== 'expired') && (
+                                        deduplicateDeadlines(selectedEmail.extractedDeadlines).some(d => deadlineTag(d.date).status !== 'expired') && (
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); addToCalendar(selectedEmail); }}
-                                                className="scan-btn"
-                                                style={{ padding: '4px 10px', fontSize: '0.8rem', marginLeft: '10px' }}
+                                                className="modal-calendar-btn"
                                                 title="Add Primary Deadline to Google Calendar"
                                             >
                                                 📅 Add to Calendar
                                             </button>
                                         )}
+                                    <a
+                                        href={`https://mail.google.com/mail/u/0/#inbox/${selectedEmail.googleMessageId}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="modal-open-gmail-btn"
+                                        title="Open in Gmail"
+                                    >
+                                        ↗ Open in Gmail
+                                    </a>
                                 </div>
-                                <div className="email-body-content" dangerouslySetInnerHTML={{ __html: selectedEmail.body || selectedEmail.snippet }} />
+                            </div>
+
+                            {/* ── Email Body ── */}
+                            <div className="modal-body">
+                                <EmailBodyRenderer
+                                    html={selectedEmail.body}
+                                    plainText={selectedEmail.snippet}
+                                    theme={theme}
+                                />
                             </div>
                         </div>
                     </div>

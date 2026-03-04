@@ -23,37 +23,87 @@ const fetchAndProcessEmails = async (user) => {
         });
 
         const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-        console.log(`[GmailService] Fetching ALL inbox emails for ${user.email}...`);
+        console.log(`[GmailService] Fetching inbox threads for ${user.email}...`);
 
-        // ── Step 1: Paginate through ALL Gmail inbox message IDs ──────────────
-        const allMessageIds = [];
+        // ── Step 1: Paginate through Gmail inbox THREADS (matches Gmail UI count) ────
+        // We use threads.list so the count matches what you see in Gmail's inbox —
+        // conversations/threads, NOT individual messages per thread.
+        // We cap at 500 most-recent threads to keep things manageable.
+        const MAX_THREADS = 500;
+        const allThreadIds = [];
         let pageToken = undefined;
         do {
-            const res = await gmail.users.messages.list({
+            const res = await gmail.users.threads.list({
                 userId: 'me',
-                maxResults: 500,          // max per page Gmail allows
+                maxResults: 500,
                 labelIds: ['INBOX'],
                 pageToken
             });
-            const msgs = res.data.messages || [];
-            allMessageIds.push(...msgs.map(m => m.id));
-            pageToken = res.data.nextPageToken;
+            const threads = res.data.threads || [];
+            for (const t of threads) {
+                allThreadIds.push(t.id);
+                if (allThreadIds.length >= MAX_THREADS) break;
+            }
+            pageToken = allThreadIds.length < MAX_THREADS ? res.data.nextPageToken : undefined;
         } while (pageToken);
 
-        if (allMessageIds.length === 0) {
-            console.log('[GmailService] No messages found.');
+        if (allThreadIds.length === 0) {
+            console.log('[GmailService] No inbox threads found.');
             return [];
         }
-        console.log(`[GmailService] Found ${allMessageIds.length} total inbox emails.`);
+        console.log(`[GmailService] Found ${allThreadIds.length} inbox threads.`);
 
-        // ── Step 2: Find which IDs are already in the DB (skip re-processing) ──
+        // ── Step 2: For each thread, get the LATEST (most recent) message ID ──────
+        // We only store/display the latest message per thread — just like Gmail does.
+        const fetchLatestMessageIdForThread = async (threadId) => {
+            try {
+                const res = await gmail.users.threads.get({
+                    userId: 'me',
+                    id: threadId,
+                    format: 'minimal'
+                });
+                const messages = res.data.messages || [];
+                if (messages.length === 0) return null;
+                // Return the ID of the most recent message in the thread
+                return messages[messages.length - 1].id;
+            } catch (err) {
+                console.error(`[GmailService] Thread fetch error for ${threadId}:`, err.message);
+                return null;
+            }
+        };
+
+        // Fetch latest message IDs for all threads (chunks of 10)
+        const currentMessageIds = [];
+        for (let i = 0; i < allThreadIds.length; i += 10) {
+            const chunk = allThreadIds.slice(i, i + 10);
+            const results = await Promise.all(chunk.map(fetchLatestMessageIdForThread));
+            currentMessageIds.push(...results.filter(id => id !== null));
+        }
+
+        const currentIdSet = new Set(currentMessageIds);
+        console.log(`[GmailService] Resolved ${currentMessageIds.length} current inbox message IDs.`);
+
+        // ── Step 3: CLEANUP — remove DB records no longer in the current inbox ───
+        // This fixes the inflated count: emails deleted/archived in Gmail should
+        // disappear from CASEO too.
+        const allStoredIds = (
+            await Email.find({ userId: user._id }).select('googleMessageId').lean()
+        ).map(e => e.googleMessageId);
+
+        const staleIds = allStoredIds.filter(id => !currentIdSet.has(id));
+        if (staleIds.length > 0) {
+            await Email.deleteMany({ userId: user._id, googleMessageId: { $in: staleIds } });
+            console.log(`[GmailService] Cleaned up ${staleIds.length} stale emails no longer in inbox.`);
+        }
+
+        // ── Step 4: Find which current IDs are NOT yet in the DB ─────────────────
         const existingIds = new Set(
-            (await Email.find({ userId: user._id, googleMessageId: { $in: allMessageIds } })
+            (await Email.find({ userId: user._id, googleMessageId: { $in: currentMessageIds } })
                 .select('googleMessageId').lean()
             ).map(e => e.googleMessageId)
         );
 
-        const newIds = allMessageIds.filter(id => !existingIds.has(id));
+        const newIds = currentMessageIds.filter(id => !existingIds.has(id));
         console.log(`[GmailService] ${existingIds.size} already stored, ${newIds.length} new to fetch & classify.`);
 
         if (newIds.length === 0) {
@@ -61,7 +111,7 @@ const fetchAndProcessEmails = async (user) => {
             return await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
         }
 
-        // ── Step 3: Fetch content for NEW emails only (parallel chunks of 10) ──
+        // ── Step 5: Fetch full content for NEW messages only (chunks of 10) ───────
         const fetchDetail = async (id) => {
             try {
                 const detail = await gmail.users.messages.get({
@@ -112,8 +162,7 @@ const fetchAndProcessEmails = async (user) => {
 
         console.log(`[GmailService] Classifying and saving ${emailDetails.length} new emails (in batches of 5)...`);
 
-        // ── Steps 2+3 combined: classify a batch of 5, then save immediately ────
-        //    This makes emails appear in the DB (and frontend) incrementally
+        // ── Step 6: Classify in batches of 5 and save immediately to MongoDB ──────
         const userDoc = await User.findById(user._id).select('categories');
         const userCategories = userDoc?.categories || [];
         const PARALLEL = 5;
@@ -122,12 +171,10 @@ const fetchAndProcessEmails = async (user) => {
         for (let i = 0; i < emailDetails.length; i += PARALLEL) {
             const batch = emailDetails.slice(i, i + PARALLEL);
 
-            // Classify batch in parallel
             const classified = await Promise.all(batch.map(async (e) => {
                 const text = `${e.subject}\n${e.snippet}`;
                 const intel = await analyzeText(text, userCategories);
 
-                // Auto-save new Gemini-generated categories
                 if (intel.is_new_category && intel.category && intel.category !== 'Unknown') {
                     await User.findByIdAndUpdate(
                         user._id,
@@ -138,7 +185,6 @@ const fetchAndProcessEmails = async (user) => {
                 return { e, intel };
             }));
 
-            // Save this batch immediately to MongoDB
             await Promise.all(classified.map(({ e, intel }) =>
                 Email.findOneAndUpdate(
                     { googleMessageId: e.id },
@@ -168,8 +214,6 @@ const fetchAndProcessEmails = async (user) => {
 
         console.log(`[GmailService] Done! ${totalSaved} new emails processed and saved.`);
         return await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
-
-
 
     } catch (error) {
         console.error('Error in fetchAndProcessEmails:', error.message);

@@ -2,7 +2,7 @@ import re
 import spacy
 import dateparser
 from dateparser.search import search_dates
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # Keywords that signal a date is a deadline (not just a mentioned date)
 DEADLINE_SIGNALS = [
@@ -93,22 +93,30 @@ class DateExtractor:
             print(f"Extraction error: {e}")
             return [], "Low"
 
-        # Urgency based on closest upcoming deadline
+        # Urgency based on closest upcoming deadline (compares exact datetime including time)
         urgency = "Low"
-        today = datetime.now()
-        min_days = float('inf')
+        now = datetime.now(timezone.utc)
+        min_hours = float('inf')
         for d in deadlines:
             try:
                 dt = datetime.fromisoformat(d['date'])
-                diff = (dt - today).days
-                if 0 <= diff < min_days:
-                    min_days = diff
+                # Make timezone-aware if naive
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                diff_seconds = (dt - now).total_seconds()
+                # Only consider future deadlines for urgency scoring
+                if diff_seconds > 0:
+                    diff_hours = diff_seconds / 3600
+                    if diff_hours < min_hours:
+                        min_hours = diff_hours
             except Exception:
                 pass
 
-        if min_days < 3:
+        if min_hours < 24:       # less than 24 hours away
+            urgency = "Critical"
+        elif min_hours < 72:     # less than 3 days
             urgency = "High"
-        elif min_days < 7:
+        elif min_hours < 168:    # less than 7 days
             urgency = "Medium"
 
         return deadlines, urgency
