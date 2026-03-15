@@ -286,12 +286,12 @@ const Dashboard = () => {
     const [selectedEmail, setSelectedEmail] = useState(null);
     const [userCategories, setUserCategories] = useState(['Academic', 'Internship', 'Job', 'Event', 'Personal']);
 
-    // Mailbox state for Sent / Drafts / Archive (fetched live from Gmail)
+    // Mailbox state for Sent / Spam / Archive (fetched live from Gmail)
     const [mailboxEmails, setMailboxEmails] = useState([]);
     const [mailboxLoading, setMailboxLoading] = useState(false);
-    const [labelCounts, setLabelCounts] = useState({ sent: null, drafts: null });
+    const [labelCounts, setLabelCounts] = useState({ sent: null, spam: null });
 
-    const MAILBOX_TABS = ['sent', 'drafts'];
+    const MAILBOX_TABS = ['sent', 'spam'];
 
     // New State for Filter & Sort
     const [filterOpen, setFilterOpen] = useState(false);
@@ -307,6 +307,9 @@ const Dashboard = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState(null); // null = not searching
     const [searchLoading, setSearchLoading] = useState(false);
+
+    // Profile picture error handling
+    const [imgError, setImgError] = useState(false);
 
     // Theme toggle — persisted in localStorage
     const [theme, setTheme] = useState(() => localStorage.getItem('caseo-theme') || 'dark');
@@ -604,18 +607,24 @@ const Dashboard = () => {
                         <span className="label">Sent</span>
                         {labelCounts.sent !== null && <span className="count">{labelCounts.sent}</span>}
                     </button>
-                    <button className={`nav-item ${activeTab === 'drafts' ? 'active' : ''}`} onClick={() => switchTab('drafts')}>
-                        <span className="icon">📝</span>
-                        <span className="label">Drafts</span>
-                        {labelCounts.drafts !== null && <span className="count">{labelCounts.drafts}</span>}
+                    <button className={`nav-item ${activeTab === 'spam' ? 'active' : ''}`} onClick={() => switchTab('spam')}>
+                        <span className="icon">🚫</span>
+                        <span className="label">Spam</span>
+                        {labelCounts.spam !== null && <span className="count">{labelCounts.spam}</span>}
                     </button>
                 </nav>
 
                 <div className="user-profile">
                     <div className="user-details">
                         <div className="avatar">
-                            {user?.photo ? (
-                                <img src={user.photo} alt="Avatar" style={{ width: '100%', borderRadius: '50%' }} />
+                            {user?.photo && !imgError ? (
+                                <img 
+                                    src={user.photo} 
+                                    alt="Avatar" 
+                                    referrerPolicy="no-referrer"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
+                                    onError={() => setImgError(true)}
+                                />
                             ) : (
                                 user?.name?.charAt(0) || 'U'
                             )}
@@ -789,9 +798,15 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* ── MAILBOX VIEW (Sent / Drafts / Archive) ── */}
+                    {/* ── MAILBOX VIEW (Sent / Spam / Archive) ── */}
                     {MAILBOX_TABS.includes(activeTab) ? (
                         <div className="email-list">
+                            {activeTab === 'spam' && (
+                                <div className="spam-warning" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                                    <p style={{ margin: 0, fontSize: '0.9rem' }}><strong>Check your spam carefully.</strong> Some useful emails might mistakenly get caught here by Gmail.</p>
+                                </div>
+                            )}
                             {mailboxLoading && (
                                 <div className="empty-state">
                                     <div className="loading-spinner" style={{ margin: '0 auto 12px' }}></div>

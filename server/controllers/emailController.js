@@ -31,14 +31,14 @@ exports.getMailbox = async (req, res) => {
     // Map frontend tab names to Gmail API label IDs
     const labelMap = {
         sent: 'SENT',
-        drafts: 'DRAFT',
+        spam: 'SPAM',
         archive: 'TRASH'
     };
     const tab = (req.query.label || '').toLowerCase();
     const label = labelMap[tab];
 
     if (!label) {
-        return res.status(400).json({ error: `Invalid mailbox label: '${tab}'. Use sent, drafts, or archive.` });
+        return res.status(400).json({ error: `Invalid mailbox label: '${tab}'. Use sent, spam, or archive.` });
     }
 
     try {
@@ -67,15 +67,15 @@ exports.getLabelCounts = async (req, res) => {
         });
         const gmail = google.gmail({ version: 'v1', auth: client });
 
-        // Fetch SENT and DRAFT label stats in parallel
-        const [sentLabel, draftLabel] = await Promise.all([
+        // Fetch SENT and SPAM label stats in parallel
+        const [sentLabel, spamLabel] = await Promise.all([
             gmail.users.labels.get({ userId: 'me', id: 'SENT' }),
-            gmail.users.labels.get({ userId: 'me', id: 'DRAFT' })
+            gmail.users.labels.get({ userId: 'me', id: 'SPAM' })
         ]);
 
         res.json({
             sent: sentLabel.data.messagesTotal || 0,
-            drafts: draftLabel.data.messagesTotal || 0
+            spam: spamLabel.data.messagesTotal || 0
         });
     } catch (error) {
         console.error('[EmailController] getLabelCounts error:', error.message);
