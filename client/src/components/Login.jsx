@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import './Login.css';
 
 // Animated typing text hook
@@ -239,7 +240,9 @@ const Login = () => {
                         </ul>
 
                         <p className="login-terms">
-                            By signing in, you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
+                            By signing in, you agree to our{' '}
+                            <Link to="/terms">Terms</Link> &amp;{' '}
+                            <Link to="/privacy">Privacy Policy</Link>.
                             We never store your email content.
                         </p>
                     </div>

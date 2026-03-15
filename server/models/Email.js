@@ -12,7 +12,7 @@ const EmailSchema = new mongoose.Schema({
     // Intelligence Fields
     category: { type: String, default: 'Unknown' }, // Removed enum to support custom user categories
     confidence: { type: Number },
-    urgency: { type: String, enum: ['High', 'Medium', 'Low'], default: 'Low' },
+    urgency: { type: String, enum: ['Critical', 'High', 'Medium', 'Low'], default: 'Low' },
     extractedDeadlines: [{
         text: String,
         date: Date,

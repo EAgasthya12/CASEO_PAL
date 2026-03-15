@@ -125,23 +125,66 @@ const fetchAndProcessEmails = async (user) => {
                 const date = dateHeader ? new Date(dateHeader) : new Date();
                 const snippet = detail.data.snippet || '';
 
-                let body = '';
-                if (payload.body?.data) {
-                    body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
-                } else if (payload.parts) {
-                    let part = payload.parts.find(p => p.mimeType === 'text/html')
-                        || payload.parts.find(p => p.mimeType === 'text/plain');
-                    if (!part) {
-                        for (const p of payload.parts) {
-                            if (p.parts) {
-                                part = p.parts.find(s => s.mimeType === 'text/html')
-                                    || p.parts.find(s => s.mimeType === 'text/plain');
-                                if (part) break;
-                            }
+                // --- Recursive MIME part extraction ---
+                // Gmail nests parts as: multipart/mixed -> multipart/alternative -> text/html
+                // A shallow search misses HTML inside 3+ level deep nesting.
+                // This helper walks the full tree and returns the best content found.
+                const extractBody = (payload) => {
+                    // Direct body data on the payload itself
+                    if (payload.body?.data) {
+                        return {
+                            data: payload.body.data,
+                            mime: payload.mimeType || 'text/plain'
+                        };
+                    }
+
+                    const parts = payload.parts || [];
+                    if (parts.length === 0) return null;
+
+                    // First pass: look for text/html at this level
+                    for (const part of parts) {
+                        if (part.mimeType === 'text/html' && part.body?.data) {
+                            return { data: part.body.data, mime: 'text/html' };
                         }
                     }
-                    if (part?.body?.data) {
-                        body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+
+                    // Second pass: recursively descend multipart/* containers
+                    for (const part of parts) {
+                        if (part.mimeType?.startsWith('multipart/')) {
+                            const found = extractBody(part);
+                            if (found) return found;
+                        }
+                    }
+
+                    // Third pass: fallback to text/plain at this level
+                    for (const part of parts) {
+                        if (part.mimeType === 'text/plain' && part.body?.data) {
+                            return { data: part.body.data, mime: 'text/plain' };
+                        }
+                    }
+
+                    // Last resort: recurse into any part that has sub-parts
+                    for (const part of parts) {
+                        if (part.parts) {
+                            const found = extractBody(part);
+                            if (found) return found;
+                        }
+                    }
+
+                    return null;
+                };
+
+                const extracted = extractBody(payload);
+                let body = '';
+                if (extracted) {
+                    body = Buffer.from(extracted.data, 'base64').toString('utf-8');
+                    // If it's plain text, wrap in basic HTML so the iframe renders cleanly
+                    if (extracted.mime === 'text/plain') {
+                        const escaped = body
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;');
+                        body = `<pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;line-height:1.7">${escaped}</pre>`;
                     }
                 }
 

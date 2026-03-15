@@ -12,6 +12,7 @@ import './Dashboard.css';
  */
 const EmailBodyRenderer = ({ html, plainText, theme }) => {
     const iframeRef = useRef(null);
+    const [loaded, setLoaded] = useState(false);
 
     const isDark = theme !== 'light';
 
@@ -21,17 +22,18 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
     const linkColor = isDark ? '#818cf8' : '#4f46e5';
 
     const writeContent = useCallback(() => {
+        setLoaded(false);
         const iframe = iframeRef.current;
         if (!iframe) return;
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
         if (!doc) return;
 
-        // Build a clean wrapper: inject our override CSS first, then the email.
-        // We use !important only where needed so email layout still works.
+        // Injected CSS: normalises the email to fit our dark UI without breaking layout.
         const overrideStyle = `
+            *, *::before, *::after { box-sizing: border-box !important; }
             html, body {
                 margin: 0 !important;
-                padding: 16px !important;
+                padding: 24px 28px !important;
                 background-color: ${bodyBg} !important;
                 color: ${bodyText} !important;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
@@ -39,6 +41,11 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
                 line-height: 1.75 !important;
                 overflow-x: hidden !important;
                 word-break: break-word !important;
+                max-width: 100% !important;
+            }
+            /* Force all containers to stay within viewport width */
+            * {
+                max-width: 100% !important;
             }
             /* Re-colour text that was explicitly set to black/dark in the email */
             *[style*="color:#000"],
@@ -52,7 +59,7 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
             *[style*="color: rgb(0"] {
                 color: ${bodyText} !important;
             }
-            /* Re-colour elements with explicit white/near-white backgrounds */
+            /* Re-colour explicit white/near-white backgrounds */
             *[style*="background-color:#fff"],
             *[style*="background-color: #fff"],
             *[style*="background-color:white"],
@@ -60,45 +67,66 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
             *[style*="background:#fff"],
             *[style*="background: #fff"],
             *[style*="background:white"],
+            *[style*="background-color:#ffffff"],
+            *[style*="background-color: #ffffff"],
             *[style*="background-color: rgb(255"],
             *[style*="background-color:rgb(255"] {
                 background-color: ${bodyBg} !important;
             }
-            /* Fix tables common in marketing emails */
-            table, td, th {
+            /* Fix tables — prevent fixed-width email tables from overflowing */
+            table {
+                border-color: rgba(255,255,255,0.08) !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                table-layout: fixed !important;
+                border-collapse: collapse;
+            }
+            td, th {
                 border-color: rgba(255,255,255,0.08) !important;
                 max-width: 100% !important;
+                overflow-wrap: break-word !important;
+                word-break: break-word !important;
+            }
+            /* Remove centering margins that create awkward whitespace */
+            table[align="center"], div[align="center"] {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
             }
             img {
                 max-width: 100% !important;
                 height: auto !important;
                 border-radius: 6px;
                 opacity: 0.92;
+                display: block;
             }
             a {
                 color: ${linkColor} !important;
                 text-decoration: underline !important;
             }
-            /* Prevent horizontal overflow from wide email containers */
-            table[width], td[width] {
-                width: 100% !important;
-            }
             /* Hide tracking pixels */
             img[width="1"], img[height="1"] {
                 display: none !important;
+            }
+            /* Plain-text pre blocks */
+            pre {
+                white-space: pre-wrap !important;
+                word-break: break-word !important;
+                overflow-x: hidden !important;
+                font-family: inherit !important;
+                max-width: 680px;
+                margin: 0 auto;
+                line-height: 1.7;
             }
         `;
 
         let content;
         if (html) {
-            // If the email already has a full <html> document, inject our style
-            // into its <head>; otherwise wrap it.
             if (/<html/i.test(html)) {
                 content = html.replace(
                     /(<head[^>]*>)/i,
                     `$1<style>${overrideStyle}</style>`
                 );
-                // If no <head> tag, add before <body>
+                // No <head>? Add before <body>
                 if (content === html) {
                     content = html.replace(
                         /(<body[^>]*>)/i,
@@ -109,17 +137,19 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
                 content = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${overrideStyle}</style></head><body>${html}</body></html>`;
             }
         } else {
-            // Plain-text fallback
-            const escaped = (plainText || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            content = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${overrideStyle}</style></head><body><pre style="white-space:pre-wrap;margin:0;font-family:inherit">${escaped}</pre></body></html>`;
+            // Plain-text fallback — rendered as wrapped pre inside a centred prose block
+            const escaped = (plainText || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            content = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${overrideStyle}</style></head><body><pre>${escaped}</pre></body></html>`;
         }
 
         doc.open();
         doc.write(content);
         doc.close();
 
-        // Resize iframe to its full content height — no cap so all content is visible.
-        // The modal-body scrolls, so the iframe just needs to be tall enough.
+        // Resize iframe to full content height so modal-body handles scrolling.
         const resize = () => {
             try {
                 const h = doc.documentElement.scrollHeight || doc.body?.scrollHeight || 400;
@@ -127,18 +157,16 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
             } catch (_) { }
         };
 
-        // Fire immediately, on load, and after images finish loading
         iframe.onload = () => {
             resize();
-            // Re-measure after each image inside finishes loading
+            setLoaded(true);
             try {
                 const imgs = doc.querySelectorAll('img');
                 imgs.forEach(img => { img.onload = resize; });
             } catch (_) { }
         };
-        // Multiple timeouts to catch late-loading content
         setTimeout(resize, 80);
-        setTimeout(resize, 300);
+        setTimeout(() => { resize(); setLoaded(true); }, 350);
         setTimeout(resize, 800);
     }, [html, plainText, isDark, bodyBg, bodyText, linkColor]);
 
@@ -147,13 +175,27 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
     }, [writeContent]);
 
     return (
-        <iframe
-            ref={iframeRef}
-            title="Email content"
-            className="email-body-iframe"
-            sandbox="allow-same-origin"
-            scrolling="no"
-        />
+        <div style={{ position: 'relative' }}>
+            {/* Shimmer skeleton while iframe loads */}
+            {!loaded && (
+                <div className="email-body-skeleton">
+                    <div className="skeleton-line" style={{ width: '85%' }} />
+                    <div className="skeleton-line" style={{ width: '70%' }} />
+                    <div className="skeleton-line" style={{ width: '90%' }} />
+                    <div className="skeleton-line" style={{ width: '60%' }} />
+                    <div className="skeleton-line" style={{ width: '78%', marginTop: '16px' }} />
+                    <div className="skeleton-line" style={{ width: '65%' }} />
+                </div>
+            )}
+            <iframe
+                ref={iframeRef}
+                title="Email content"
+                className="email-body-iframe"
+                sandbox="allow-same-origin"
+                scrolling="no"
+                style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+            />
+        </div>
     );
 };
 
@@ -958,11 +1000,30 @@ const Dashboard = () => {
 
                             {/* ── Email Body ── */}
                             <div className="modal-body">
-                                <EmailBodyRenderer
-                                    html={selectedEmail.body}
-                                    plainText={selectedEmail.snippet}
-                                    theme={theme}
-                                />
+                                {selectedEmail.body ? (
+                                    <EmailBodyRenderer
+                                        html={selectedEmail.body}
+                                        plainText={selectedEmail.snippet}
+                                        theme={theme}
+                                    />
+                                ) : (
+                                    <div className="modal-no-body">
+                                        <div className="modal-no-body-icon">📭</div>
+                                        <p className="modal-no-body-title">Full email content not available</p>
+                                        <p className="modal-no-body-hint">
+                                            This email was stored before full body sync. Scan your inbox to load the content, or open it directly in Gmail.
+                                        </p>
+                                        <a
+                                            href={`https://mail.google.com/mail/u/0/#inbox/${selectedEmail.googleMessageId}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="modal-open-gmail-btn"
+                                            style={{ display: 'inline-flex', marginTop: '8px' }}
+                                        >
+                                            ↗ Open in Gmail
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
