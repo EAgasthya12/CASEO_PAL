@@ -104,22 +104,22 @@ const FEATURES = [
     {
         icon: '🧠',
         title: 'AI Classification',
-        desc: 'Gemini AI reads and categorizes every email automatically.',
+        desc: 'Every email is read and categorised automatically — no manual sorting needed.',
     },
     {
         icon: '⏰',
         title: 'Deadline Detection',
-        desc: 'Never miss a due date — deadlines are extracted and tracked.',
+        desc: 'Due dates and deadlines are pulled straight from the email body and tracked for you.',
     },
     {
         icon: '⚡',
         title: 'Smart Urgency',
-        desc: 'Emails are scored Critical, High, Medium or Low instantly.',
+        desc: 'Each email gets a priority score — Critical, High, Medium or Low — the moment it arrives.',
     },
     {
         icon: '📅',
         title: 'Calendar Sync',
-        desc: 'Add detected deadlines to Google Calendar in one click.',
+        desc: 'Spotted a deadline? Add it to Google Calendar with a single click.',
     },
 ];
 
@@ -151,7 +151,6 @@ const Login = () => {
                     <div className="login-logo-badge">C</div>
                     <span>CASEO</span>
                 </div>
-                {/* <div className="login-nav-tag">Powered by Gemini AI</div> */}
             </nav>
 
             {/* Main layout */}
@@ -180,7 +179,7 @@ const Login = () => {
                     </p>
 
                     {/* Feature cards */}
-                    {/* <div className="login-features">
+                    <div className="login-features">
                         {FEATURES.map((f, i) => (
                             <div className="login-feature-card" key={i} style={{ animationDelay: `${i * 0.1}s` }}>
                                 <div className="feature-card-icon">{f.icon}</div>
@@ -190,7 +189,7 @@ const Login = () => {
                                 </div>
                             </div>
                         ))}
-                    </div> */}
+                    </div>
                 </div>
 
                 {/* RIGHT: Sign-in card */}
@@ -202,7 +201,7 @@ const Login = () => {
                         </div>
 
                         <h2 className="login-card-title">Welcome to CASEO</h2>
-                        <p className="login-card-sub">Sign in to unlock your AI inbox</p>
+                        <p className="login-card-sub">Context-Aware Smart Email Organizer</p>
 
                         <button
                             className={`google-signin-btn ${loading ? 'loading' : ''}`}

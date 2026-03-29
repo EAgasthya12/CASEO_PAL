@@ -79,7 +79,7 @@ const TermsOfService = () => {
                         <h2>4. Data Usage</h2>
                         <p>
                             CASEO processes your email metadata and content <strong>solely for the purpose of providing
-                            the Service</strong>. We do not:
+                                the Service</strong>. We do not:
                         </p>
                         <ul>
                             <li>Permanently store your email content on our servers</li>

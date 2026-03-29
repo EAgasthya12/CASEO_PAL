@@ -2,7 +2,7 @@ import re
 import spacy
 import dateparser
 from dateparser.search import search_dates
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 # Keywords that signal a date is a deadline (not just a mentioned date)
 DEADLINE_SIGNALS = [
@@ -12,8 +12,15 @@ DEADLINE_SIGNALS = [
     r'expir(es?|y|ing)', r'ends?\s+(on|at|by)', r'final\s+date',
     r'not\s+later\s+than', r'no\s+later\s+than',
     r'must\s+(be\s+)?(submit|send|register|apply)',
+    # Interview / reporting signals
+    r'interview\s+scheduled', r'report\s+at', r'appear\s+for',
+    r'joining\s+(date|on)', r'reporting\s+(date|time)',
+    r'slot\s+(date|time)', r'session\s+(date|time)',
 ]
 SIGNAL_RE = re.compile('|'.join(DEADLINE_SIGNALS), re.IGNORECASE)
+
+# Maximum deadline candidates to return (prevents spam emails flooding with 50+ dates)
+MAX_DEADLINE_CANDIDATES = 5
 
 
 class DateExtractor:
@@ -38,25 +45,24 @@ class DateExtractor:
                 if ent.label_ in ["DATE", "TIME"]:
                     parsed = dateparser.parse(
                         ent.text,
-                        settings={'PREFER_DATES_FROM': 'future'}
+                        settings={'PREFER_DATES_FROM': 'future', 'RETURN_AS_TIMEZONE_AWARE': True}
                     )
                     if parsed:
-                        # Check proximity to deadline signals (within 120 chars either side)
                         start = max(0, ent.start_char - 120)
                         end = min(len(text), ent.end_char + 120)
                         context = text[start:end]
                         has_signal = bool(SIGNAL_RE.search(context))
                         raw_candidates.append({
                             "text": ent.text,
-                            "date": parsed.isoformat(),
+                            "date": parsed.astimezone(timezone.utc).isoformat(),
                             "label": ent.label_,
                             "has_signal": has_signal
                         })
 
-            # 2. dateparser.search fallback
+            # 2. dateparser.search fallback for dates spaCy missed
             found_dates = search_dates(
                 text,
-                settings={'PREFER_DATES_FROM': 'future'}
+                settings={'PREFER_DATES_FROM': 'future', 'RETURN_AS_TIMEZONE_AWARE': True}
             ) or []
             for text_match, p_date in found_dates:
                 pos = text.find(text_match)
@@ -67,7 +73,7 @@ class DateExtractor:
                     has_signal = False
                 raw_candidates.append({
                     "text": text_match,
-                    "date": p_date.isoformat(),
+                    "date": p_date.astimezone(timezone.utc).isoformat(),
                     "label": "DATE_PARSER",
                     "has_signal": has_signal
                 })
@@ -85,6 +91,12 @@ class DateExtractor:
             signal_deadlines = [d for d in all_deduplicated if d["has_signal"]]
             deadlines = signal_deadlines if signal_deadlines else all_deduplicated
 
+            # 5. Cap to MAX_DEADLINE_CANDIDATES (avoid spam emails flooding with dozens of dates)
+            if len(deadlines) > MAX_DEADLINE_CANDIDATES:
+                # Prefer the ones with signals first, then earliest
+                deadlines = sorted(deadlines, key=lambda d: (not d["has_signal"], d["date"]))
+                deadlines = deadlines[:MAX_DEADLINE_CANDIDATES]
+
             # Strip internal field before returning
             for d in deadlines:
                 d.pop("has_signal", None)
@@ -93,18 +105,16 @@ class DateExtractor:
             print(f"Extraction error: {e}")
             return [], "Low"
 
-        # Urgency based on closest upcoming deadline (compares exact datetime including time)
+        # ── Urgency based on closest upcoming deadline ────────────────────────
         urgency = "Low"
         now = datetime.now(timezone.utc)
         min_hours = float('inf')
         for d in deadlines:
             try:
                 dt = datetime.fromisoformat(d['date'])
-                # Make timezone-aware if naive
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=timezone.utc)
                 diff_seconds = (dt - now).total_seconds()
-                # Only consider future deadlines for urgency scoring
                 if diff_seconds > 0:
                     diff_hours = diff_seconds / 3600
                     if diff_hours < min_hours:
@@ -112,11 +122,11 @@ class DateExtractor:
             except Exception:
                 pass
 
-        if min_hours < 24:       # less than 24 hours away
+        if min_hours < 24:       # < 24 hours
             urgency = "Critical"
-        elif min_hours < 72:     # less than 3 days
+        elif min_hours < 72:     # < 3 days
             urgency = "High"
-        elif min_hours < 168:    # less than 7 days
+        elif min_hours < 168:    # < 7 days
             urgency = "Medium"
 
         return deadlines, urgency

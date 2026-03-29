@@ -12,11 +12,11 @@ CONFIDENCE_THRESHOLD = 0.50
 
 DEFAULT_CATEGORIES = ["Academic", "Internship", "Job", "Event", "Personal"]
 
-# ── Tier 1: Keyword rules (ordered by priority, higher = stronger signal) ────
+# ── Tier 1: Keyword rules (ordered by priority, higher score = stronger signal) ──
 # Each rule: (category, score, [keywords_lower])
 KEYWORD_RULES = [
     # Internship — check BEFORE Job (trainee/intern are subsets of job-like emails)
-    ("Internship", 0.90, [
+    ("Internship", 0.92, [
         "internship", "intern position", "intern role", "internship program",
         "internship opportunity", "summer intern", "winter intern", "off-campus internship",
         "internship offer", "intern hiring",
@@ -28,8 +28,7 @@ KEYWORD_RULES = [
     # Job
     ("Job", 0.95, [
         "job profile", "job opening", "job opportunity", "job application",
-        "job offer", "open for application", "accepting applications",
-        "new job opening",
+        "job offer", "open for application", "accepting applications", "new job opening",
     ]),
     ("Job", 0.85, [
         "we are hiring", "currently hiring", "open position", "open role",
@@ -37,6 +36,7 @@ KEYWORD_RULES = [
         "software engineer", "business development", "apply now", "ctc",
         "salary package", "shortlisted for", "you have been shortlisted",
         "stage 1", "stage 2", "gd round", "interview scheduled",
+        "joining date", "offer letter", "placement drive",
     ]),
     ("Job", 0.75, [
         "vacancy", "recruiter", "recruitment", "hiring for",
@@ -52,6 +52,7 @@ KEYWORD_RULES = [
         "lecture", "tutorial", "course material", "submit your report",
         "faculty", "professor", "attendance", "local chapter",
         "study material", "college", "department of", "academic",
+        "marks", "grade", "result declared", "backlogs",
     ]),
     ("Academic", 0.75, [
         "semester", "timetable", "syllabus",
@@ -65,22 +66,46 @@ KEYWORD_RULES = [
     ("Event", 0.80, [
         "workshop", "meetup", "rsvp", "register now", "open talk",
         "summit", "you are invited", "join us for", "event details",
-        "live session", "online session",
+        "live session", "online session", "quiz competition",
+    ]),
+
+    # Finance / Banking
+    ("Finance", 0.92, [
+        "transaction alert", "debit alert", "credit alert", "bank statement",
+        "account statement", "payment received", "payment failed",
+        "emi due", "loan statement", "upi transaction",
+    ]),
+    ("Finance", 0.80, [
+        "invoice", "receipt", "order confirmation", "refund", "subscription renewed",
+        "bill generated", "due amount", "payment reminder",
+    ]),
+
+    # Newsletter / Promotions
+    ("Newsletter", 0.88, [
+        "unsubscribe", "newsletter", "weekly digest", "monthly update",
+        "you're receiving this because", "view in browser",
+        "this email was sent to",
+    ]),
+    ("Newsletter", 0.78, [
+        "latest news", "product update", "new feature", "what's new",
+        "now available", "introducing", "check it out",
     ]),
 
     # Personal
     ("Personal", 0.90, [
         "dear friend", "happy birthday", "best wishes", "congratulations",
-        "personal note",
+        "personal note", "family", "vacation", "hi there",
     ]),
 ]
 
 # Senders that strongly imply a category
 SENDER_RULES = [
-    ("Job",        0.85, ["superset", "joinsuperset", "instahyre", "naukri", "linkedin", "foundit"]),
+    ("Job",        0.88, ["superset", "joinsuperset", "instahyre", "naukri", "linkedin", "foundit", "hirist"]),
     ("Academic",   0.85, ["nptel", "swayam", "coursera", "udemy", "edx"]),
-    ("Event",      0.80, ["eventbrite", "meetup.com", "townscript"]),
-    ("Personal",   0.85, ["gmail.com"]),  # Personal Gmail senders
+    ("Event",      0.80, ["eventbrite", "meetup.com", "townscript", "unstop"]),
+    ("Finance",    0.90, ["noreply@hdfcbank", "alerts@axisbank", "noreply@icicibank",
+                          "sbi.", "kotak", "paytm", "razorpay", "stripe", "paypal"]),
+    ("Newsletter", 0.82, ["substack", "mailchimp", "sendgrid", "campaigns.medi"]),
 ]
 
 
@@ -92,7 +117,7 @@ def keyword_classify(text_lower, sender_lower, labels):
     best_cat = None
     best_score = 0.0
 
-    # Check sender rules first
+    # Sender rules (checked first — high signal)
     for category, score, patterns in SENDER_RULES:
         if category not in labels:
             continue
@@ -102,7 +127,7 @@ def keyword_classify(text_lower, sender_lower, labels):
                     best_score = score
                     best_cat = category
 
-    # Check text keywords
+    # Keyword rules
     for category, score, keywords in KEYWORD_RULES:
         if category not in labels:
             continue
@@ -116,30 +141,51 @@ def keyword_classify(text_lower, sender_lower, labels):
     return best_cat, best_score
 
 
+# ── Gemini helper: call with exponential back-off ────────────────────────────
+def _call_gemini_with_retry(model, prompt, max_attempts=3):
+    """
+    Calls Gemini and retries up to max_attempts times using exponential back-off.
+    Returns the raw response text, or raises the last exception.
+    """
+    last_err = None
+    for attempt in range(max_attempts):
+        try:
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            last_err = e
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            print(f"[Classifier] Gemini attempt {attempt + 1} failed ({type(e).__name__}), retrying in {wait}s…")
+            time.sleep(wait)
+    raise last_err
+
+
 class EmailClassifier:
     def __init__(self):
+        # gemini-2.5-flash: latest Gemini model — best speed/quality balance
         self.gemini = genai.GenerativeModel("gemini-2.5-flash")
-        print("[Classifier] Ready — keyword Tier 1 + Gemini Tier 2.")
+        print("[Classifier] Ready — keyword Tier 1 + Gemini 2.5 Flash Tier 2.")
 
     def classify(self, text, user_categories=None, sender=""):
-        if text and len(text) > 1000:
-            text = text[:1000]
+        # Cap text to keep Gemini latency low while preserving enough context
+        if text and len(text) > 2000:
+            text = text[:2000]
 
         labels = user_categories if user_categories and len(user_categories) > 0 else DEFAULT_CATEGORIES
         text_lower = text.lower()
         sender_lower = sender.lower() if sender else ""
 
-        # ── Tier 1: Keyword + sender matching (instant) ───────────────────────
+        # ── Tier 1: Keyword + sender matching (instant, no network call) ──────
         cat, score = keyword_classify(text_lower, sender_lower, labels)
         if cat and score >= CONFIDENCE_THRESHOLD:
             print(f"[Classifier] Tier 1 (keyword) → '{cat}' ({score:.2f})")
             return {"category": cat, "confidence": score, "is_new_category": False}
 
-        print(f"[Classifier] No strong keyword match (best={score:.2f}), calling Gemini...")
+        print(f"[Classifier] No strong keyword match (best={score:.2f}), calling Gemini 2.5 Flash…")
 
-        # ── Tier 2: Gemini — one attempt only, fail fast to keyword fallback ─────
+        # ── Tier 2: Gemini 2.5 Flash with retry back-off ─────────────────────
         existing_str = ", ".join(f'"{c}"' for c in labels)
-        prompt = f"""You are an intelligent email categorization assistant.
+        prompt = f"""You are an intelligent email categorisation assistant.
 
 Existing categories: [{existing_str}]
 
@@ -148,15 +194,15 @@ Email content:
 
 Rules:
 1. Pick the single most appropriate existing category.
-2. ONLY create a new category (1-3 words, Title Case) if this email genuinely doesn't fit any existing one.
-3. "Unknown" is NOT valid. Always return a real category.
+2. ONLY create a new category (1–3 words, Title Case) if this email genuinely doesn't fit any existing one.
+3. "Unknown" is NOT a valid category. Always return a real category.
 
-Respond with ONLY raw JSON:
+Respond with ONLY raw JSON (no markdown):
 {{"category": "<name>", "is_new": true/false, "confidence": 0.0-1.0}}"""
 
         try:
-            response = self.gemini.generate_content(prompt)
-            raw = re.sub(r"^```json\s*|\s*```$", "", response.text.strip(), flags=re.MULTILINE).strip()
+            raw_text = _call_gemini_with_retry(self.gemini, prompt)
+            raw = re.sub(r"^```json\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE).strip()
             parsed = json.loads(raw)
             category   = parsed.get("category", "")
             is_new     = parsed.get("is_new", False)
@@ -167,16 +213,85 @@ Respond with ONLY raw JSON:
             if category in labels:
                 is_new = False
 
-            print(f"[Classifier] Tier 2 (Gemini) → '{category}' (new={is_new}, conf={confidence:.2f})")
+            print(f"[Classifier] Tier 2 (Gemini 2.5 Flash) → '{category}' (new={is_new}, conf={confidence:.2f})")
             return {"category": category, "confidence": confidence, "is_new_category": is_new}
 
         except Exception as e:
-            print(f"[Classifier] Gemini unavailable ({type(e).__name__}), using keyword fallback instantly.")
+            print(f"[Classifier] Gemini unavailable after retries ({type(e).__name__}), using keyword fallback.")
 
         # ── Tier 3: Best keyword match as final fallback ──────────────────────
         if cat:
             print(f"[Classifier] Keyword fallback → '{cat}'")
-            return {"category": cat, "confidence": 0.5, "is_new_category": False}
+            return {"category": cat, "confidence": 0.50, "is_new_category": False}
 
-        print("[Classifier] No match, defaulting to 'Personal'")
-        return {"category": "Personal", "confidence": 0.4, "is_new_category": False}
+        print("[Classifier] No match at all, defaulting to 'Personal'")
+        return {"category": "Personal", "confidence": 0.40, "is_new_category": False}
+
+    def classify_batch(self, emails, labels):
+        """
+        Classify a batch of emails in a single Gemini API call.
+        emails: list of {"id": int, "text": str}
+        labels: list of category strings
+        Returns: dict of {id: {"category": str, "confidence": float, "is_new_category": bool}}
+        """
+        if not emails:
+            return {}
+
+        existing_str = ", ".join(f'"{c}"' for c in labels)
+        # Build a numbered list for the prompt
+        email_block = "\n".join(
+            f'{e["id"]}. """{e["text"][:600]}"""' for e in emails
+        )
+
+        prompt = f"""You are an intelligent email categorisation assistant.
+
+Existing categories: [{existing_str}]
+
+Classify each numbered email below. For each:
+1. Pick the single most appropriate existing category.
+2. Only create a new category (1–3 words, Title Case) if none fit.
+3. "Unknown" is NOT valid.
+
+Emails:
+{email_block}
+
+Respond ONLY with raw JSON (no markdown), mapping each number to its result:
+{{
+  "0": {{"category": "<name>", "is_new": false, "confidence": 0.85}},
+  "1": {{"category": "<name>", "is_new": false, "confidence": 0.90}},
+  ...
+}}"""
+
+        try:
+            raw_text = _call_gemini_with_retry(self.gemini, prompt)
+            raw = re.sub(r"^```json\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE).strip()
+            parsed = json.loads(raw)
+
+            results = {}
+            for e in emails:
+                key = str(e["id"])
+                cls = parsed.get(key, {})
+                category   = cls.get("category", labels[0] if labels else "Personal")
+                is_new     = cls.get("is_new", False)
+                confidence = float(cls.get("confidence", 0.80))
+                if category in labels:
+                    is_new = False
+                results[e["id"]] = {
+                    "category": category,
+                    "confidence": confidence,
+                    "is_new_category": is_new,
+                }
+            return results
+
+        except Exception as e:
+            print(f"[Classifier] Batch Gemini call failed ({type(e).__name__}), falling back to per-email keyword.")
+            results = {}
+            for em in emails:
+                t = em["text"].lower()
+                cat, score = keyword_classify(t, "", labels)
+                results[em["id"]] = {
+                    "category": cat or (labels[0] if labels else "Personal"),
+                    "confidence": score if score > 0 else 0.40,
+                    "is_new_category": False,
+                }
+            return results

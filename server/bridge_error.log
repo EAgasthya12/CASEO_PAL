@@ -10624,3 +10624,35 @@ Data: {
   "response": "No response"
 }
 
+[2026-03-29T11:05:34.983Z] analyzeText failed
+Data: {
+  "message": "timeout of 15000ms exceeded",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "SDE Preparation Product @ Lowest Prices\nHi Pallavi Nagalakshmi, The only SDE Prep product with video",
+  "response": "No response"
+}
+
+[2026-03-29T11:05:49.053Z] analyzeText failed
+Data: {
+  "message": "timeout of 15000ms exceeded",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Accountant (QuickBooks + Payments) @ RivetStays Ontario Inc.\n₹90,‌000 - ₹1,‌08,‌000 a month. Hi Alur",
+  "response": "No response"
+}
+
+[2026-03-29T11:06:17.651Z] analyzeText failed
+Data: {
+  "message": "timeout of 15000ms exceeded",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Get 50% off Pro\nRefresh your skillset with 50% off Pro. PRO SALE 50% off Refresh your expertise with",
+  "response": "No response"
+}
+
+[2026-03-29T11:10:27.385Z] analyzeText failed
+Data: {
+  "message": "timeout of 15000ms exceeded",
+  "url": "http://localhost:5001/classify",
+  "textSnippet": "Make your social content shine\nPlan, create, publish, and track your content in one place ͏ ‌ ﻿ ͏ ‌ ",
+  "response": "No response"
+}
+

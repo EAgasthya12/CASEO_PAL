@@ -1,43 +1,52 @@
 const { google } = require('googleapis');
-const axios = require('axios');
-const { analyzeText } = require('./pythonBridge');
+const { analyzeBatch } = require('./pythonBridge');
 const Email = require('../models/Email');
 const User = require('../models/User');
 
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5001';
 
+// ── Shared OAuth2 client factory ──────────────────────────────────────────────
+// Centralises credential setup — avoids copy-pasting across service + controllers.
+const getOAuthClient = (user) => {
+    const client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URI
+    );
+    client.setCredentials({
+        access_token: user.accessToken,
+        refresh_token: user.refreshToken,
+    });
+    return client;
+};
 
-const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
-);
 
-const fetchAndProcessEmails = async (user) => {
+/**
+ * Fetch and process inbox emails with PROGRESSIVE LOADING:
+ *  1. Immediately classify & save the 50 most recent threads (fast first load).
+ *  2. Classify & save the remaining threads in the background (no extra response needed).
+ *
+ * @param {Object} user  - Authenticated user document
+ * @param {Function} [onProgress] - Optional callback(processed, total) for progress updates
+ */
+const fetchAndProcessEmails = async (user, onProgress) => {
     try {
         if (!user.accessToken) throw new Error('No access token found for user');
 
-        oauth2Client.setCredentials({
-            access_token: user.accessToken,
-            refresh_token: user.refreshToken
-        });
+        const auth = getOAuthClient(user);
+        const gmail = google.gmail({ version: 'v1', auth });
+        console.log(`[GmailService] Fetching inbox threads for ${user.email}…`);
 
-        const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-        console.log(`[GmailService] Fetching inbox threads for ${user.email}...`);
-
-        // ── Step 1: Paginate through Gmail inbox THREADS (matches Gmail UI count) ────
-        // We use threads.list so the count matches what you see in Gmail's inbox —
-        // conversations/threads, NOT individual messages per thread.
-        // We cap at 500 most-recent threads to keep things manageable.
+        // ── Step 1: Paginate through inbox THREADS (matches Gmail UI thread count) ──
         const MAX_THREADS = 500;
         const allThreadIds = [];
-        let pageToken = undefined;
+        let pageToken;
         do {
             const res = await gmail.users.threads.list({
                 userId: 'me',
                 maxResults: 500,
                 labelIds: ['INBOX'],
-                pageToken
+                pageToken,
             });
             const threads = res.data.threads || [];
             for (const t of threads) {
@@ -53,50 +62,40 @@ const fetchAndProcessEmails = async (user) => {
         }
         console.log(`[GmailService] Found ${allThreadIds.length} inbox threads.`);
 
-        // ── Step 2: For each thread, get the LATEST (most recent) message ID ──────
-        // We only store/display the latest message per thread — just like Gmail does.
-        const fetchLatestMessageIdForThread = async (threadId) => {
+        // ── Step 2: Get the latest message ID for each thread (chunks of 20) ─────
+        const fetchLatestMessageId = async (threadId) => {
             try {
-                const res = await gmail.users.threads.get({
-                    userId: 'me',
-                    id: threadId,
-                    format: 'minimal'
-                });
-                const messages = res.data.messages || [];
-                if (messages.length === 0) return null;
-                // Return the ID of the most recent message in the thread
-                return messages[messages.length - 1].id;
+                const res = await gmail.users.threads.get({ userId: 'me', id: threadId, format: 'minimal' });
+                const msgs = res.data.messages || [];
+                return msgs.length ? msgs[msgs.length - 1].id : null;
             } catch (err) {
-                console.error(`[GmailService] Thread fetch error for ${threadId}:`, err.message);
+                console.error(`[GmailService] Thread fetch error ${threadId}:`, err.message);
                 return null;
             }
         };
 
-        // Fetch latest message IDs for all threads (chunks of 10)
         const currentMessageIds = [];
-        for (let i = 0; i < allThreadIds.length; i += 10) {
-            const chunk = allThreadIds.slice(i, i + 10);
-            const results = await Promise.all(chunk.map(fetchLatestMessageIdForThread));
-            currentMessageIds.push(...results.filter(id => id !== null));
+        for (let i = 0; i < allThreadIds.length; i += 20) { // upgraded: 10 → 20
+            const chunk = allThreadIds.slice(i, i + 20);
+            const results = await Promise.all(chunk.map(fetchLatestMessageId));
+            currentMessageIds.push(...results.filter(Boolean));
         }
 
         const currentIdSet = new Set(currentMessageIds);
         console.log(`[GmailService] Resolved ${currentMessageIds.length} current inbox message IDs.`);
 
-        // ── Step 3: CLEANUP — remove DB records no longer in the current inbox ───
-        // This fixes the inflated count: emails deleted/archived in Gmail should
-        // disappear from CASEO too.
-        const allStoredIds = (
+        // ── Step 3: Cleanup — remove stale DB records no longer in inbox ─────────
+        const storedIds = (
             await Email.find({ userId: user._id }).select('googleMessageId').lean()
         ).map(e => e.googleMessageId);
 
-        const staleIds = allStoredIds.filter(id => !currentIdSet.has(id));
+        const staleIds = storedIds.filter(id => !currentIdSet.has(id));
         if (staleIds.length > 0) {
             await Email.deleteMany({ userId: user._id, googleMessageId: { $in: staleIds } });
-            console.log(`[GmailService] Cleaned up ${staleIds.length} stale emails no longer in inbox.`);
+            console.log(`[GmailService] Cleaned up ${staleIds.length} stale emails.`);
         }
 
-        // ── Step 4: Find which current IDs are NOT yet in the DB ─────────────────
+        // ── Step 4: Find which IDs are new (not yet in DB) ───────────────────────
         const existingIds = new Set(
             (await Email.find({ userId: user._id, googleMessageId: { $in: currentMessageIds } })
                 .select('googleMessageId').lean()
@@ -104,73 +103,50 @@ const fetchAndProcessEmails = async (user) => {
         );
 
         const newIds = currentMessageIds.filter(id => !existingIds.has(id));
-        console.log(`[GmailService] ${existingIds.size} already stored, ${newIds.length} new to fetch & classify.`);
+        console.log(`[GmailService] ${existingIds.size} already stored, ${newIds.length} new to classify.`);
 
         if (newIds.length === 0) {
             console.log('[GmailService] All emails already up to date.');
             return await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
         }
 
-        // ── Step 5: Fetch full content for NEW messages only (chunks of 10) ───────
+        // ── Step 5: Fetch full content for new messages (chunks of 20) ──────────
         const fetchDetail = async (id) => {
             try {
-                const detail = await gmail.users.messages.get({
-                    userId: 'me', id, format: 'full'
-                });
+                const detail = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
                 const payload = detail.data.payload;
                 const headers = payload.headers;
-                const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
-                const from = headers.find(h => h.name === 'From')?.value || '(Unknown)';
-                const dateHeader = headers.find(h => h.name === 'Date')?.value;
+                const get = (name) => headers.find(h => h.name === name)?.value || '';
+                const subject = get('Subject') || '(No Subject)';
+                const from = get('From') || '(Unknown)';
+                const dateHeader = get('Date');
                 const date = dateHeader ? new Date(dateHeader) : new Date();
                 const snippet = detail.data.snippet || '';
 
-                // --- Recursive MIME part extraction ---
-                // Gmail nests parts as: multipart/mixed -> multipart/alternative -> text/html
-                // A shallow search misses HTML inside 3+ level deep nesting.
-                // This helper walks the full tree and returns the best content found.
-                const extractBody = (payload) => {
-                    // Direct body data on the payload itself
-                    if (payload.body?.data) {
-                        return {
-                            data: payload.body.data,
-                            mime: payload.mimeType || 'text/plain'
-                        };
-                    }
-
-                    const parts = payload.parts || [];
-                    if (parts.length === 0) return null;
-
-                    // First pass: look for text/html at this level
+                // Recursive MIME part extractor
+                const extractBody = (p) => {
+                    if (p.body?.data) return { data: p.body.data, mime: p.mimeType || 'text/plain' };
+                    const parts = p.parts || [];
                     for (const part of parts) {
-                        if (part.mimeType === 'text/html' && part.body?.data) {
+                        if (part.mimeType === 'text/html' && part.body?.data)
                             return { data: part.body.data, mime: 'text/html' };
-                        }
                     }
-
-                    // Second pass: recursively descend multipart/* containers
                     for (const part of parts) {
                         if (part.mimeType?.startsWith('multipart/')) {
                             const found = extractBody(part);
                             if (found) return found;
                         }
                     }
-
-                    // Third pass: fallback to text/plain at this level
                     for (const part of parts) {
-                        if (part.mimeType === 'text/plain' && part.body?.data) {
+                        if (part.mimeType === 'text/plain' && part.body?.data)
                             return { data: part.body.data, mime: 'text/plain' };
-                        }
                     }
-
-                    // Last resort: recurse into any part that has sub-parts
                     for (const part of parts) {
                         if (part.parts) {
                             const found = extractBody(part);
                             if (found) return found;
                         }
                     }
-
                     return null;
                 };
 
@@ -178,7 +154,6 @@ const fetchAndProcessEmails = async (user) => {
                 let body = '';
                 if (extracted) {
                     body = Buffer.from(extracted.data, 'base64').toString('utf-8');
-                    // If it's plain text, wrap in basic HTML so the iframe renders cleanly
                     if (extracted.mime === 'text/plain') {
                         const escaped = body
                             .replace(/&/g, '&amp;')
@@ -190,158 +165,244 @@ const fetchAndProcessEmails = async (user) => {
 
                 return { id, subject, from, date, snippet, body };
             } catch (err) {
-                console.error(`Failed to fetch email ${id}:`, err.message);
+                console.error(`[GmailService] Failed to fetch email ${id}:`, err.message);
                 return null;
             }
         };
 
-        // Fetch in parallel chunks of 10
-        const emailDetails = [];
-        for (let i = 0; i < newIds.length; i += 10) {
-            const chunk = newIds.slice(i, i + 10);
-            const results = await Promise.all(chunk.map(fetchDetail));
-            emailDetails.push(...results.filter(r => r !== null));
-        }
+        // ── Step 6: PROGRESSIVE — process PRIORITY batch (50 newest) first ───────
+        const PRIORITY_BATCH = 50;
+        const priorityIds = newIds.slice(0, PRIORITY_BATCH);
+        const remainingIds = newIds.slice(PRIORITY_BATCH);
 
-        console.log(`[GmailService] Classifying and saving ${emailDetails.length} new emails (in batches of 5)...`);
-
-        // ── Step 6: Classify in batches of 5 and save immediately to MongoDB ──────
-        const userDoc = await User.findById(user._id).select('categories');
+        const userDoc = await User.findById(user._id).select('categories ignoredSenders');
         const userCategories = userDoc?.categories || [];
-        const PARALLEL = 5;
-        let totalSaved = 0;
+        const ignoredSenders = userDoc?.ignoredSenders || [];
 
-        for (let i = 0; i < emailDetails.length; i += PARALLEL) {
-            const batch = emailDetails.slice(i, i + PARALLEL);
+        console.log(`[GmailService] Priority batch: classifying ${priorityIds.length} newest emails first…`);
+        await _processAndSave(gmail, priorityIds, user, userCategories, ignoredSenders);
+        if (onProgress) onProgress(priorityIds.length, newIds.length);
 
-            const classified = await Promise.all(batch.map(async (e) => {
-                const text = `${e.subject}\n${e.snippet}`;
-                const intel = await analyzeText(text, userCategories);
+        // Return the first page of results immediately — the caller gets fast data
+        const firstPage = await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
 
-                if (intel.is_new_category && intel.category && intel.category !== 'Unknown') {
-                    await User.findByIdAndUpdate(
-                        user._id,
-                        { $addToSet: { categories: intel.category } }
-                    );
-                    console.log(`[GmailService] Auto-created category: "${intel.category}"`);
-                }
-                return { e, intel };
-            }));
-
-            await Promise.all(classified.map(({ e, intel }) =>
-                Email.findOneAndUpdate(
-                    { googleMessageId: e.id },
-                    {
-                        userId: user._id,
-                        googleMessageId: e.id,
-                        subject: e.subject,
-                        sender: e.from,
-                        date: e.date,
-                        snippet: e.snippet,
-                        body: e.body,
-                        category: intel.category || 'Personal',
-                        confidence: intel.confidence,
-                        urgency: intel.urgency || 'Low',
-                        extractedDeadlines: intel.deadlines || [],
-                        isProcessed: true
-                    },
-                    { upsert: true, new: true }
-                ).catch(err => console.error(`Failed to save email ${e.id}:`, err.message))
-            ));
-
-            totalSaved += batch.length;
-            if (totalSaved % 50 === 0 || totalSaved === emailDetails.length) {
-                console.log(`[GmailService] Progress: ${totalSaved}/${emailDetails.length} saved`);
-            }
+        // ── Step 7: Background — process remaining emails without blocking ────────
+        if (remainingIds.length > 0) {
+            _processRemainingBackground(gmail, remainingIds, user, userCategories, ignoredSenders, onProgress, priorityIds.length, newIds.length);
         }
 
-        console.log(`[GmailService] Done! ${totalSaved} new emails processed and saved.`);
-        return await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
+        return firstPage;
 
     } catch (error) {
-        console.error('Error in fetchAndProcessEmails:', error.message);
+        console.error('[GmailService] fetchAndProcessEmails error:', error.message);
         throw error;
     }
 };
 
 /**
- * Fetch emails from a Gmail mailbox label (SENT, DRAFT, TRASH)
- * directly from Gmail API — no DB storage, no AI analysis.
- * @param {Object} user - Authenticated user with accessToken/refreshToken
- * @param {string} label - Gmail label: 'SENT', 'DRAFT', 'TRASH'
- * @param {number} count - Max results to fetch
+ * Internal: fetch details + batch-classify + save a list of message IDs.
+ */
+const _processAndSave = async (gmail, ids, user, userCategories, ignoredSenders = []) => {
+    if (ids.length === 0) return;
+
+    // Fetch details in parallel chunks of 20
+    const emailDetails = [];
+    for (let i = 0; i < ids.length; i += 20) {
+        const chunk = ids.slice(i, i + 20);
+        const results = await Promise.all(chunk.map(id => _fetchDetail(gmail, id)));
+        emailDetails.push(...results.filter(Boolean));
+    }
+
+    if (emailDetails.length === 0) return;
+
+    // Batch-classify all at once via /classify-batch
+    const batchInput = emailDetails.map(e => ({
+        id: e.id,
+        text: `${e.subject}\n${e.snippet}`,
+        sender: e.from,
+    }));
+
+    const intelMap = await analyzeBatch(batchInput, userCategories);
+
+    // Persist + auto-create new categories
+    await Promise.allSettled(
+        emailDetails.map(async (e) => {
+            const intel = intelMap[e.id] || { category: 'Personal', confidence: 0.4, urgency: 'Low', deadlines: [] };
+
+            if (intel.is_new_category && intel.category && intel.category !== 'Unknown') {
+                await User.findByIdAndUpdate(user._id, { $addToSet: { categories: intel.category } });
+                console.log(`[GmailService] Auto-created category: "${intel.category}"`);
+            }
+
+            return Email.findOneAndUpdate(
+                { googleMessageId: e.id },
+                {
+                    userId: user._id,
+                    googleMessageId: e.id,
+                    subject: e.subject,
+                    sender: e.from,
+                    date: e.date,
+                    snippet: e.snippet,
+                    body: e.body,
+                    category: intel.category || 'Personal',
+                    confidence: intel.confidence,
+                    urgency: intel.urgency || 'Low',
+                    extractedDeadlines: intel.deadlines || [],
+                    isProcessed: true,
+                    isRead: false,
+                    isUseful: !ignoredSenders.includes(e.from),
+                },
+                { upsert: true, new: true }
+            );
+        })
+    );
+
+    console.log(`[GmailService] Saved ${emailDetails.length} emails.`);
+};
+
+/**
+ * Internal: fetch full email detail for a single message ID.
+ */
+const _fetchDetail = async (gmail, id) => {
+    try {
+        const detail = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
+        const payload = detail.data.payload;
+        const headers = payload.headers;
+        const get = (name) => headers.find(h => h.name === name)?.value || '';
+        const subject = get('Subject') || '(No Subject)';
+        const from = get('From') || '(Unknown)';
+        const to = get('To') || '';
+        const dateHeader = get('Date');
+        const date = dateHeader ? new Date(dateHeader) : new Date();
+        const snippet = detail.data.snippet || '';
+
+        const extractBody = (p) => {
+            if (p.body?.data) return { data: p.body.data, mime: p.mimeType || 'text/plain' };
+            const parts = p.parts || [];
+            for (const part of parts) {
+                if (part.mimeType === 'text/html' && part.body?.data)
+                    return { data: part.body.data, mime: 'text/html' };
+            }
+            for (const part of parts) {
+                if (part.mimeType?.startsWith('multipart/')) {
+                    const found = extractBody(part);
+                    if (found) return found;
+                }
+            }
+            for (const part of parts) {
+                if (part.mimeType === 'text/plain' && part.body?.data)
+                    return { data: part.body.data, mime: 'text/plain' };
+            }
+            for (const part of parts) {
+                if (part.parts) {
+                    const found = extractBody(part);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
+        const extracted = extractBody(payload);
+        let body = '';
+        if (extracted) {
+            body = Buffer.from(extracted.data, 'base64').toString('utf-8');
+            if (extracted.mime === 'text/plain') {
+                const escaped = body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                body = `<pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;line-height:1.7">${escaped}</pre>`;
+            }
+        }
+
+        return { id, subject, from, to, date, snippet, body };
+    } catch (err) {
+        console.error(`[GmailService] Failed to fetch email ${id}:`, err.message);
+        return null;
+    }
+};
+
+/**
+ * Internal: process remaining emails in background (fire and forget — called after first response)
+ */
+const _processRemainingBackground = (gmail, ids, user, userCategories, ignoredSenders, onProgress, processed, total) => {
+    setImmediate(async () => {
+        try {
+            const CHUNK = 50;
+            for (let i = 0; i < ids.length; i += CHUNK) {
+                const chunk = ids.slice(i, i + CHUNK);
+                await _processAndSave(gmail, chunk, user, userCategories, ignoredSenders);
+                processed += chunk.length;
+                if (onProgress) onProgress(processed, total);
+                console.log(`[GmailService] Background progress: ${processed}/${total}`);
+            }
+            console.log(`[GmailService] Background processing complete.`);
+        } catch (err) {
+            console.error('[GmailService] Background processing error:', err.message);
+        }
+    });
+};
+
+/**
+ * Fetch emails from a Gmail mailbox label (SENT, SPAM, TRASH) directly from Gmail API.
+ * No DB storage, no AI analysis.
  */
 const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
     try {
         if (!user.accessToken) throw new Error('No access token found for user');
 
-        const client = new google.auth.OAuth2(
-            process.env.GOOGLE_CLIENT_ID,
-            process.env.GOOGLE_CLIENT_SECRET,
-            process.env.GOOGLE_REDIRECT_URI
-        );
-        client.setCredentials({
-            access_token: user.accessToken,
-            refresh_token: user.refreshToken
-        });
+        const auth = getOAuthClient(user);
+        const gmail = google.gmail({ version: 'v1', auth });
 
-        const gmail = google.gmail({ version: 'v1', auth: client });
+        console.log(`[GmailService] Fetching ${label} mailbox for ${user.email}…`);
 
-        console.log(`[GmailService] Fetching ${label} mailbox for user ${user.email}...`);
-
-        const response = await gmail.users.messages.list({
-            userId: 'me',
-            maxResults: count,
-            labelIds: [label]
-        });
-
+        const response = await gmail.users.messages.list({ userId: 'me', maxResults: count, labelIds: [label] });
         const messages = response.data.messages;
         if (!messages || messages.length === 0) {
             console.log(`[GmailService] No messages found in ${label}.`);
             return [];
         }
 
-        // Fetch message details in parallel (no AI, just headers + snippet)
         const details = await Promise.all(
             messages.map(async (msg) => {
-                try {
-                    const detail = await gmail.users.messages.get({
-                        userId: 'me',
-                        id: msg.id,
-                        format: 'metadata',
-                        metadataHeaders: ['Subject', 'From', 'To', 'Date']
-                    });
-
-                    const headers = detail.data.payload?.headers || [];
-                    const get = (name) => headers.find(h => h.name === name)?.value || '';
-
-                    return {
-                        _id: msg.id,
-                        googleMessageId: msg.id,
-                        subject: get('Subject') || '(No Subject)',
-                        sender: get('From') || '(Unknown)',
-                        recipient: get('To') || '',
-                        date: get('Date') ? new Date(get('Date')) : new Date(),
-                        snippet: detail.data.snippet || '',
-                        mailbox: label,
-                        // No urgency/category/deadlines — not analyzed
-                    };
-                } catch (err) {
-                    console.error(`[GmailService] Failed to fetch message ${msg.id}:`, err.message);
-                    return null;
-                }
+                const fetched = await _fetchDetail(gmail, msg.id);
+                if (!fetched) return null;
+                
+                return {
+                    _id: fetched.id,
+                    googleMessageId: fetched.id,
+                    subject: fetched.subject,
+                    sender: fetched.from,
+                    recipient: fetched.to,
+                    date: fetched.date,
+                    snippet: fetched.snippet,
+                    body: fetched.body,
+                    mailbox: label,
+                };
             })
         );
 
-        const results = details.filter(d => d !== null);
+        const results = details.filter(Boolean);
         console.log(`[GmailService] Fetched ${results.length} messages from ${label}.`);
         return results;
 
     } catch (error) {
-        console.error(`[GmailService] Error fetching mailbox ${label}:`, error.message);
+        console.error(`[GmailService] fetchMailboxEmails error (${label}):`, error.message);
         throw error;
     }
 };
 
+/**
+ * Get Gmail label message counts for SENT and SPAM.
+ */
+const getLabelMessageCounts = async (user) => {
+    const auth = getOAuthClient(user);
+    const gmail = google.gmail({ version: 'v1', auth });
+    const [sentLabel, spamLabel] = await Promise.all([
+        gmail.users.labels.get({ userId: 'me', id: 'SENT' }),
+        gmail.users.labels.get({ userId: 'me', id: 'SPAM' }),
+    ]);
+    return {
+        sent: sentLabel.data.messagesTotal || 0,
+        spam: spamLabel.data.messagesTotal || 0,
+    };
+};
 
-module.exports = { fetchAndProcessEmails, fetchMailboxEmails };
+module.exports = { fetchAndProcessEmails, fetchMailboxEmails, getLabelMessageCounts };

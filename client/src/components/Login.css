@@ -94,7 +94,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 48px;
+  padding: 16px 48px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -142,8 +142,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5rem;
-  padding: 48px 64px;
+  gap: 4rem;
+  padding: 24px 64px;
   max-width: 1300px;
   margin: 0 auto;
   width: 100%;
@@ -157,9 +157,9 @@
 
 .login-badge-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .login-badge {
@@ -183,10 +183,10 @@
 }
 
 .login-headline {
-  font-size: 3.6rem;
+  font-size: 3.2rem;
   font-weight: 900;
   line-height: 1.15;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   letter-spacing: -0.03em;
   background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
   -webkit-background-clip: text;
@@ -233,9 +233,9 @@
 .login-subtext {
   font-size: 1.05rem;
   color: #94a3b8;
-  line-height: 1.75;
+  line-height: 1.6;
   max-width: 520px;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
   animation: fadeSlideUp 0.7s 0.2s both;
 }
 
@@ -243,15 +243,15 @@
 .login-features {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
   animation: fadeSlideUp 0.7s 0.3s both;
 }
 
 .login-feature-card {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 18px 18px;
+  gap: 12px;
+  padding: 16px 16px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -298,7 +298,7 @@
   backdrop-filter: blur(32px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
-  padding: 44px 40px 36px;
+  padding: 36px 36px 28px;
   box-shadow:
     0 32px 64px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.04) inset;
@@ -337,18 +337,18 @@
 
 .login-card-title {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: #f1f5f9;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: -0.02em;
 }
 
 .login-card-sub {
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #64748b;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 /* ── Google Sign-in Button ── */
@@ -445,7 +445,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 24px 0 16px;
+  margin: 20px 0 14px;
   color: #475569;
   font-size: 0.78rem;
   font-weight: 600;
@@ -466,8 +466,8 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 
 .login-perks li {
@@ -500,7 +500,7 @@
   line-height: 1.6;
   text-align: center;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 18px;
+  padding-top: 14px;
 }
 
 .login-terms a {

@@ -1,61 +1,81 @@
-from flask import Flask, request, jsonify
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-app = Flask(__name__)
-
-from classifier import EmailClassifier
-from extractor import DateExtractor
-
-# Initialize models (singleton pattern for this simple app)
-print("Loading models...")
-classifier = EmailClassifier()
-extractor = DateExtractor()
-print("Models loaded.")
-
-import logging
 import sys
 import io
+import os
+import logging
 
-# Force UTF-8 for stdout/stderr to prevent Windows UnicodeEncodeError
+# ── UTF-8 stdout/stderr fix (must be FIRST on Windows) ───────────────────────
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-# Configure logging
+# ── Logging (must be set up before model loading so startup messages are captured)
 logging.basicConfig(
     filename='app_debug.log',
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s: %(message)s',
     encoding='utf-8'
 )
-# Also log to stdout for immediate visibility in terminal
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 logging.getLogger().addHandler(console_handler)
 
+from flask import Flask, request, jsonify
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = Flask(__name__)
+
+# ── Request size limit: 2 MB max (prevents huge email bodies from crashing Flask)
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
+
+# ── CORS headers on every response ───────────────────────────────────────────
+@app.after_request
+def add_cors(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS'
+    return response
+
+from classifier import EmailClassifier
+from extractor import DateExtractor
+
+logging.info("Loading models...")
+classifier = EmailClassifier()
+extractor = DateExtractor()
+logging.info("Models loaded and ready.")
+
+
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({"status": "running", "service": "CASEO Intelligence Layer"})
+    gemini_configured = bool(os.getenv("GEMINI_API_KEY"))
+    return jsonify({
+        "status": "running",
+        "service": "CASEO Intelligence Layer",
+        "gemini_configured": gemini_configured,
+    })
+
 
 @app.route('/classify', methods=['POST'])
 def classify():
     try:
         data = request.json
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+
         text = data.get('text', '')
         user_categories = data.get('user_categories', [])
-        
+        sender = data.get('sender', '')
+
         if not text:
             logging.warning("No text provided in request")
             return jsonify({"error": "No text provided"}), 400
 
-        # Classification (Tier 1: zero-shot, Tier 2: Gemini fallback)
-        cls_result = classifier.classify(text, user_categories=user_categories)
-        
-        # Extraction
+        # Classification (Tier 1: keyword, Tier 2: Gemini 2.5 Flash, Tier 3: fallback)
+        cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+
+        # Deadline + urgency extraction
         deadlines, urgency = extractor.extract_deadlines(text)
-        
+
         return jsonify({
             "category": cls_result['category'],
             "confidence": cls_result['confidence'],
@@ -67,15 +87,19 @@ def classify():
         logging.error(f"Error in /classify endpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/classify-batch', methods=['POST'])
 def classify_batch():
     """
-    Batch classify multiple emails in a single request.
-    Expects: { "emails": [{"id": "msgId", "text": "subject + snippet"}, ...], "user_categories": [...] }
-    Returns: { "results": {"msgId": {"category": ..., "confidence": ..., "is_new_category": ...}, ...} }
+    Batch classify multiple emails in a single Gemini call.
+    Body: { "emails": [{"id": "msgId", "text": "subject + snippet"}, ...], "user_categories": [...] }
+    Returns: { "results": {"msgId": {"category": ..., "confidence": ..., "is_new_category": ..., "deadlines": [...], "urgency": ...}} }
     """
     try:
         data = request.json
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+
         emails = data.get('emails', [])
         user_categories = data.get('user_categories', [])
 
@@ -85,7 +109,7 @@ def classify_batch():
         labels = user_categories if user_categories else ["Academic", "Internship", "Job", "Event", "Personal"]
 
         all_results = {}
-        batch_size = 10  # Classify 10 emails per Gemini call
+        batch_size = 10  # Gemini can comfortably handle 10 emails per call
 
         for i in range(0, len(emails), batch_size):
             batch = emails[i:i + batch_size]
@@ -95,9 +119,9 @@ def classify_batch():
 
             for j, item in enumerate(batch):
                 msg_id = item["id"]
-                cls = batch_result.get(j, {"category": labels[0], "confidence": 0.5, "is_new_category": False})
-
-                # Also run deadline extraction for this email
+                cls = batch_result.get(j, {
+                    "category": labels[0], "confidence": 0.50, "is_new_category": False
+                })
                 deadlines, urgency = extractor.extract_deadlines(item["text"])
                 all_results[msg_id] = {
                     "category": cls["category"],
@@ -113,7 +137,8 @@ def classify_batch():
         logging.error(f"Error in /classify-batch endpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5001))
-    logging.info(f"Starting app on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    logging.info(f"Starting CASEO Intelligence Layer on port {port}")
+    app.run(host='0.0.0.0', port=port, debug=False)

@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema({
         type: [String],
         default: ['Academic', 'Internship', 'Job', 'Event', 'Personal']
     },
+    ignoredSenders: { type: [String], default: [] },
     createdAt: { type: Date, default: Date.now },
 });
 
