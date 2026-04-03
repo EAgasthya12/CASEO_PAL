@@ -288,6 +288,7 @@ const Dashboard = () => {
                     if (statusRes.data.running) return;
 
                     // Trigger the background sync without throwing a massive loading screen blocking the UI
+                    setScanStatus({ running: true, processed: 0, total: 0 });
                     await axios.post(`${API}/api/emails/reclassify`, {}, { withCredentials: true });
                     
                     const poll = setInterval(async () => {
@@ -495,7 +496,17 @@ const Dashboard = () => {
                                 ))}
                                 {filteredEmails.length === 0 && (
                                     <div className="empty-state">
-                                        <p>{searchQuery ? 'No results found.' : 'No emails match your filters.'}</p>
+                                        {scanStatus.running ? (
+                                            <div style={{ textAlign: 'center', padding: '40px' }}>
+                                                <div className="loading-spinner" style={{ margin: '0 auto 16px' }} />
+                                                <h3 style={{ margin: '0 0 8px' }}>Scanning your inbox...</h3>
+                                                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                                                    CASEO AI is reading and categorizing your recent emails. This might take a minute on your first login.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <p>{searchQuery ? 'No results found.' : 'No emails match your filters.'}</p>
+                                        )}
                                     </div>
                                 )}
                             </>

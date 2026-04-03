@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const passport = require('passport');
+const connectMongoObj = require('connect-mongo');
+const MongoStore = connectMongoObj.default || connectMongoObj;
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,12 +29,20 @@ const SESSION_SECRET = process.env.SESSION_SECRET;
 if (!SESSION_SECRET) {
     console.warn('⚠️  SESSION_SECRET not set in .env — using insecure default. Set it before deploying!');
 }
+
+const mongoStore = MongoStore.create({
+    mongoUrl: process.env.MONGO_URI || 'mongodb://localhost:27017/caseo_db',
+    collectionName: 'sessions',
+});
+
 app.use(require('express-session')({
     secret: SESSION_SECRET || 'caseo_dev_secret_please_change',
     resave: false,
     saveUninitialized: false,
+    store: mongoStore,
     cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }, // 7 days
 }));
+
 
 // ── Passport ──────────────────────────────────────────────────────────────────
 require('./config/passport');

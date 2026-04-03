@@ -9,10 +9,11 @@ router.get('/google', passport.authenticate('google', {
 // Callback
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }),
     (req, res) => {
-        // Successful authentication, redirect dashboard.
-        // In a decoupled setup (React on port 5173), we might need to send a token or redirect with a cookie.
-        // simpler approach: Redirect to client URL
-        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard`);
+        // Successful authentication, explicitly save session before redirecting.
+        req.session.save((err) => {
+            if (err) console.error('Session save error:', err);
+            res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard`);
+        });
     }
 );
 

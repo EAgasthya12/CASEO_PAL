@@ -15093,3 +15093,174 @@
 2026-03-30 16:04:25,894 INFO: [33mPress CTRL+C to quit[0m
 2026-03-30 16:09:24,802 DEBUG: Looking up time zone info from registry
 2026-03-30 16:09:24,855 INFO: 127.0.0.1 - - [30/Mar/2026 16:09:24] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-01 20:56:26,248 INFO: Loading models...
+2026-04-01 20:56:26,703 INFO: Models loaded and ready.
+2026-04-01 20:56:26,704 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-01 20:56:26,720 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.204.187.184:5001
+2026-04-01 20:56:26,720 INFO: [33mPress CTRL+C to quit[0m
+2026-04-03 15:22:16,634 INFO: Loading models...
+2026-04-03 15:22:17,141 INFO: Models loaded and ready.
+2026-04-03 15:22:17,143 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-03 15:22:17,154 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.128.71.184:5001
+2026-04-03 15:22:17,155 INFO: [33mPress CTRL+C to quit[0m
+2026-04-03 15:24:51,802 DEBUG: Looking up time zone info from registry
+2026-04-03 15:24:52,611 INFO: 127.0.0.1 - - [03/Apr/2026 15:24:52] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:25:07,717 INFO: 127.0.0.1 - - [03/Apr/2026 15:25:07] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:25:24,011 INFO: 127.0.0.1 - - [03/Apr/2026 15:25:24] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:25:36,248 INFO: 127.0.0.1 - - [03/Apr/2026 15:25:36] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:25:51,345 INFO: 127.0.0.1 - - [03/Apr/2026 15:25:51] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:25:54,174 INFO: 127.0.0.1 - - [03/Apr/2026 15:25:54] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:26:07,438 INFO: 127.0.0.1 - - [03/Apr/2026 15:26:07] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:26:22,046 INFO: 127.0.0.1 - - [03/Apr/2026 15:26:22] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:26:26,211 INFO: 127.0.0.1 - - [03/Apr/2026 15:26:26] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-03 15:26:37,819 INFO: 127.0.0.1 - - [03/Apr/2026 15:26:37] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:26:52,838 INFO: 127.0.0.1 - - [03/Apr/2026 15:26:52] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:27:08,130 INFO: 127.0.0.1 - - [03/Apr/2026 15:27:08] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:37:52,705 INFO: 127.0.0.1 - - [03/Apr/2026 15:37:52] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:37:53,705 INFO: 127.0.0.1 - - [03/Apr/2026 15:37:53] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:10,481 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:10] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:26,107 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:26] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:26,331 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:26] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:26,375 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:26] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:26,525 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:26] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:27,691 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:27] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:36,580 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:36] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:42,956 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:42] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:43,102 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:43] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:54,000 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:54] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:58,437 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:58] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:59,213 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:59] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:59,586 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:59] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:59,691 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:59] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:59,805 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:59] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:38:59,908 INFO: 127.0.0.1 - - [03/Apr/2026 15:38:59] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:39:00,097 INFO: 127.0.0.1 - - [03/Apr/2026 15:39:00] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:39:00,452 INFO: 127.0.0.1 - - [03/Apr/2026 15:39:00] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:39:00,578 INFO: 127.0.0.1 - - [03/Apr/2026 15:39:00] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:39:00,775 INFO: 127.0.0.1 - - [03/Apr/2026 15:39:00] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:39:01,424 INFO: 127.0.0.1 - - [03/Apr/2026 15:39:01] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:39:44,735 INFO: Loading models...
+2026-04-03 15:39:45,181 INFO: Models loaded and ready.
+2026-04-03 15:39:45,182 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-03 15:39:45,196 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.128.71.184:5001
+2026-04-03 15:39:45,196 INFO: [33mPress CTRL+C to quit[0m
+2026-04-03 15:42:29,126 DEBUG: Looking up time zone info from registry
+2026-04-03 15:42:46,731 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:46] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:47,211 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:47] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:48,329 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:48] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:49,357 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:49] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:49,553 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:49] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:50,870 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:50] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:51,206 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:51] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:51,555 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:51] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:51,770 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:51] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:42:52,679 INFO: 127.0.0.1 - - [03/Apr/2026 15:42:52] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:09,040 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:09] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:09,239 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:09] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:11,645 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:11] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:12,572 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:12] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:12,902 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:12] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:13,224 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:13] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:13,790 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:13] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:13,981 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:13] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:14,985 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:14] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:29,941 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:29] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:30,987 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:30] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:31,331 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:31] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:31,654 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:31] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:36,313 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:36] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:46,944 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:46] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:48,242 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:48] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:48,974 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:48] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:43:57,265 INFO: 127.0.0.1 - - [03/Apr/2026 15:43:57] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:04,343 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:04] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:04,570 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:04] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:04,836 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:04] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:14,790 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:14] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:20,132 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:20] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:21,205 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:21] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:21,949 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:21] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:22,220 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:22] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:22,378 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:22] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:22,424 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:22] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:23,309 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:23] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:24,324 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:24] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:24,525 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:24] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:24,781 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:24] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:32,922 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:32] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:40,510 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:40] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:41,201 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:41] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:41,381 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:41] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:41,546 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:41] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:41,589 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:41] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:44:47,878 INFO: 127.0.0.1 - - [03/Apr/2026 15:44:47] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:08,085 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:08] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:30,998 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:30] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:31,217 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:31] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:33,005 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:33] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:35,527 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:35] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:36,306 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:36] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:37,550 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:37] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:47,976 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:47] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-03 15:45:52,953 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:52] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:53,174 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:53] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:45:54,141 INFO: 127.0.0.1 - - [03/Apr/2026 15:45:54] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:09,364 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:09] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:09,678 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:09] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:09,842 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:09] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:21,768 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:21] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:25,044 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:25] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:26,041 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:26] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:26,337 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:26] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:37,648 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:37] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:42,308 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:42] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:42,561 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:42] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:46:52,572 INFO: 127.0.0.1 - - [03/Apr/2026 15:46:52] "POST /classify HTTP/1.1" 200 -
+2026-04-03 15:47:07,504 INFO: 127.0.0.1 - - [03/Apr/2026 15:47:07] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-03 15:47:09,557 INFO: 127.0.0.1 - - [03/Apr/2026 15:47:09] "POST /classify HTTP/1.1" 200 -
+2026-04-03 17:30:42,222 INFO: 127.0.0.1 - - [03/Apr/2026 17:30:42] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-03 20:41:21,216 INFO: Loading models...
+2026-04-03 20:41:21,727 INFO: Models loaded and ready.
+2026-04-03 20:41:21,728 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-03 20:41:21,743 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.128.71.184:5001
+2026-04-03 20:41:21,744 INFO: [33mPress CTRL+C to quit[0m
+2026-04-03 20:43:57,170 DEBUG: Looking up time zone info from registry
+2026-04-03 20:43:59,283 INFO: 127.0.0.1 - - [03/Apr/2026 20:43:59] "POST /classify HTTP/1.1" 200 -
+2026-04-03 20:43:59,712 INFO: 127.0.0.1 - - [03/Apr/2026 20:43:59] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-03 20:44:14,742 INFO: 127.0.0.1 - - [03/Apr/2026 20:44:14] "POST /classify HTTP/1.1" 200 -
+2026-04-03 20:44:43,032 INFO: 127.0.0.1 - - [03/Apr/2026 20:44:43] "POST /classify HTTP/1.1" 200 -
+2026-04-03 21:52:11,701 INFO: Loading models...
+2026-04-03 21:52:12,152 INFO: Models loaded and ready.
+2026-04-03 21:52:12,153 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-03 21:52:12,164 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://172.26.11.184:5001
+2026-04-03 21:52:12,164 INFO: [33mPress CTRL+C to quit[0m
+2026-04-03 21:58:37,454 DEBUG: Looking up time zone info from registry
+2026-04-03 21:58:37,835 INFO: 127.0.0.1 - - [03/Apr/2026 21:58:37] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-03 21:58:51,289 INFO: 127.0.0.1 - - [03/Apr/2026 21:58:51] "POST /classify HTTP/1.1" 200 -
+2026-04-03 21:59:19,230 INFO: 127.0.0.1 - - [03/Apr/2026 21:59:19] "POST /classify HTTP/1.1" 200 -
+2026-04-03 22:46:02,889 INFO: Loading models...
+2026-04-03 22:46:03,353 INFO: Models loaded and ready.
+2026-04-03 22:46:03,355 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-03 22:46:03,368 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://172.26.11.184:5001
+2026-04-03 22:46:03,369 INFO: [33mPress CTRL+C to quit[0m
+2026-04-03 22:48:32,225 INFO: 127.0.0.1 - - [03/Apr/2026 22:48:32] "POST /classify HTTP/1.1" 200 -
+2026-04-03 22:48:32,631 INFO: 127.0.0.1 - - [03/Apr/2026 22:48:32] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-03 22:49:15,578 INFO: 127.0.0.1 - - [03/Apr/2026 22:49:15] "POST /classify HTTP/1.1" 200 -
