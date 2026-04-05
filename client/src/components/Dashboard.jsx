@@ -123,10 +123,10 @@ const Dashboard = () => {
 
     // ── Scan / sync inbox ─────────────────────────────────────────────────────
     const syncEmails = async () => {
-        if (loading || scanStatus.running) return;
+        if (loading) return; // Allow manual sync to trigger even if silent autoSync is in background 
         setLoading(true);
         try {
-            await axios.post(`${API}/api/emails/reclassify`, {}, { withCredentials: true });
+            await axios.post(`${API}/api/emails/reclassify?maxThreads=500`, {}, { withCredentials: true });
             await fetchEmails();
             toast.success('Scan started — your inbox is updating in the background.');
 
@@ -135,11 +135,16 @@ const Dashboard = () => {
                     const res = await axios.get(`${API}/api/emails/scan-status`, { withCredentials: true });
                     setScanStatus(res.data);
                     await fetchEmails();
+                    await fetchLabelCounts(); // Refresh sent/spam counts 
                     if (!res.data.running) {
                         clearInterval(poll);
                         setLoading(false);
                         setScanStatus({ running: false, processed: 0, total: 0 });
-                        toast.success(`Scan complete — ${res.data.processed} emails processed.`);
+                        if (res.data.processed === 0) {
+                            toast.success('Your inbox is already up to date!');
+                        } else {
+                            toast.success(`Scan complete — ${res.data.processed} new emails processed.`);
+                        }
                     }
                 } catch {
                     clearInterval(poll);
@@ -161,9 +166,22 @@ const Dashboard = () => {
             fetchMailbox(tab);
         } else if (tab === 'not_useful') {
             fetchEmails(1, 'not_useful');
+        } else if (tab === 'priority') {
+            fetchEmails(1, 'priority');
         } else {
             fetchEmails(1, 'inbox');
         }
+    };
+
+    const goToPage = (newPage) => {
+        if (newPage < 1 || newPage > pagination.pages) return;
+        let tabToFetch = 'inbox';
+        if (activeTab === 'not_useful') tabToFetch = 'not_useful';
+        if (activeTab === 'priority')   tabToFetch = 'priority';
+
+        fetchEmails(newPage, tabToFetch);
+        // Scroll to top of the list when page changes
+        document.querySelector('.email-list')?.scrollTo(0, 0);
     };
 
     const handleLogout = () => { window.location.href = `${API}/auth/logout`; };
@@ -251,13 +269,7 @@ const Dashboard = () => {
 
     const processEmails = () => {
         let result = [...emails];
-        if (activeTab === 'priority') {
-            const now = new Date();
-            result = result.filter(e =>
-                e.extractedDeadlines?.length > 0 &&
-                e.extractedDeadlines.some(d => new Date(d.date) > now)
-            );
-        }
+
         if (filterCategory) result = result.filter(e => e.category === filterCategory);
         if (sortConfig.type === 'date' && sortConfig.dateVal) {
             const selectedTime = new Date(sortConfig.dateVal).getTime();
@@ -283,25 +295,26 @@ const Dashboard = () => {
         fetchEmails().then(() => {
             const autoSync = async () => {
                 try {
-                    // Check if a scan is already running (e.g., from another session)
-                    const statusRes = await axios.get(`${API}/api/emails/scan-status`, { withCredentials: true });
-                    if (statusRes.data.running) return;
+                    // Only auto-sync if we have very little data (likely first login)
+                    if (pagination.total > 50) return;
 
                     // Trigger the background sync without throwing a massive loading screen blocking the UI
-                    setScanStatus({ running: true, processed: 0, total: 0 });
-                    await axios.post(`${API}/api/emails/reclassify`, {}, { withCredentials: true });
+                    setScanStatus({ running: true, processed: 0, total: 0, auto: true });
+                    await axios.post(`${API}/api/emails/reclassify?maxThreads=100`, {}, { withCredentials: true });
                     
                     const poll = setInterval(async () => {
                         try {
                             const res = await axios.get(`${API}/api/emails/scan-status`, { withCredentials: true });
-                            setScanStatus(res.data);
-                            if (res.data.running) {
-                                fetchEmails();
-                            } else {
-                                clearInterval(poll);
-                                setScanStatus({ running: false, processed: 0, total: 0 });
-                                fetchEmails();
-                            }
+                                setScanStatus(res.data);
+                                if (res.data.running) {
+                                    fetchEmails();
+                                    fetchLabelCounts(); // Refresh sent/spam 
+                                } else {
+                                    clearInterval(poll);
+                                    setScanStatus({ running: false, processed: 0, total: 0 });
+                                    fetchEmails();
+                                    fetchLabelCounts(); // Final refresh
+                                }
                         } catch {
                             clearInterval(poll);
                         }
@@ -340,6 +353,7 @@ const Dashboard = () => {
             <Sidebar
                 activeTab={activeTab}
                 emails={emails}
+                inboxTotal={pagination.total}
                 labelCounts={labelCounts}
                 user={user}
                 imgError={imgError}
@@ -363,17 +377,42 @@ const Dashboard = () => {
                 <div className="content-area">
                     <div className="content-header">
                         <h1>
-                            {searchQuery
-                                ? searchLoading
-                                    ? 'Searching…'
-                                    : `${searchResults?.length ?? 0} result${searchResults?.length !== 1 ? 's' : ''} for "${searchQuery}"`
-                                : activeTab === 'priority' ? 'Priority'
-                                    : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
-                            }
-                        </h1>
+                                {searchQuery
+                                    ? searchLoading
+                                        ? 'Searching…'
+                                        : `${searchResults?.length ?? 0} result${searchResults?.length !== 1 ? 's' : ''} for "${searchQuery}"`
+                                    : activeTab === 'priority' ? 'Priority'
+                                        : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
+                                }
+                            </h1>
 
                         {!isMailboxTab && (
                             <div className="view-actions">
+                                {/* ── Inline Pagination Arrows ── */}
+                                {!searchQuery.trim() && pagination.pages > 1 && (activeTab === 'inbox' || activeTab === 'not_useful') && (
+                                    <div className="pagination-inline">
+                                        <button
+                                            className="pagination-arrow-btn"
+                                            disabled={pagination.page <= 1}
+                                            onClick={() => goToPage(pagination.page - 1)}
+                                            title="Previous page"
+                                        >
+                                            ◀
+                                        </button>
+                                        <span className="pagination-page-info">
+                                            {pagination.page} / {pagination.pages}
+                                        </span>
+                                        <button
+                                            className="pagination-arrow-btn"
+                                            disabled={pagination.page >= pagination.pages}
+                                            onClick={() => goToPage(pagination.page + 1)}
+                                            title="Next page"
+                                        >
+                                            ▶
+                                        </button>
+                                    </div>
+                                )}
+
                                 {/* Filter */}
                                 <div className="action-wrapper">
                                     <button
@@ -512,6 +551,8 @@ const Dashboard = () => {
                             </>
                         )}
                     </div>
+                    
+
                 </div>
 
                 {/* Email Detail Modal */}

@@ -110,10 +110,6 @@ SENDER_RULES = [
 
 
 def keyword_classify(text_lower, sender_lower, labels):
-    """
-    Returns (category, confidence) if a strong keyword/sender match is found.
-    Returns (None, 0) if no confident match.
-    """
     best_cat = None
     best_score = 0.0
 
@@ -141,12 +137,7 @@ def keyword_classify(text_lower, sender_lower, labels):
     return best_cat, best_score
 
 
-# ── Gemini helper: call with exponential back-off ────────────────────────────
 def _call_gemini_with_retry(model, prompt, max_attempts=3):
-    """
-    Calls Gemini and retries up to max_attempts times using exponential back-off.
-    Returns the raw response text, or raises the last exception.
-    """
     last_err = None
     for attempt in range(max_attempts):
         try:
@@ -154,20 +145,18 @@ def _call_gemini_with_retry(model, prompt, max_attempts=3):
             return response.text
         except Exception as e:
             last_err = e
-            wait = 2 ** attempt  # 1s, 2s, 4s
-            print(f"[Classifier] Gemini attempt {attempt + 1} failed ({type(e).__name__}), retrying in {wait}s…")
+            wait = 2 ** attempt
+            print(f"[Classifier] Gemini attempt {attempt + 1} failed, retrying in {wait}s…")
             time.sleep(wait)
     raise last_err
 
 
 class EmailClassifier:
     def __init__(self):
-        # gemini-2.5-flash: latest Gemini model — best speed/quality balance
-        self.gemini = genai.GenerativeModel("gemini-2.5-flash")
-        print("[Classifier] Ready — keyword Tier 1 + Gemini 2.5 Flash Tier 2.")
+        self.gemini = genai.GenerativeModel("gemini-1.5-flash") # Fixed model name
+        print("[Classifier] Ready - Tier 1 keywords + Tier 2 Gemini Flash.")
 
     def classify(self, text, user_categories=None, sender=""):
-        # Cap text to keep Gemini latency low while preserving enough context
         if text and len(text) > 2000:
             text = text[:2000]
 
@@ -175,15 +164,10 @@ class EmailClassifier:
         text_lower = text.lower()
         sender_lower = sender.lower() if sender else ""
 
-        # ── Tier 1: Keyword + sender matching (instant, no network call) ──────
         cat, score = keyword_classify(text_lower, sender_lower, labels)
         if cat and score >= CONFIDENCE_THRESHOLD:
-            print(f"[Classifier] Tier 1 (keyword) → '{cat}' ({score:.2f})")
-            return {"category": cat, "confidence": score, "is_new_category": False}
+            return {"category": cat, "confidence": score, "is_new_category": False, "urgency": "Low"}
 
-        print(f"[Classifier] No strong keyword match (best={score:.2f}), calling Gemini 2.5 Flash…")
-
-        # ── Tier 2: Gemini 2.5 Flash with retry back-off ─────────────────────
         existing_str = ", ".join(f'"{c}"' for c in labels)
         prompt = f"""You are an intelligent email categorisation assistant.
 
@@ -192,75 +176,58 @@ Existing categories: [{existing_str}]
 Email content:
 \"\"\"{text}\"\"\"
 
-Rules:
-1. Pick the single most appropriate existing category.
-2. ONLY create a new category (1–3 words, Title Case) if this email genuinely doesn't fit any existing one.
-3. "Unknown" is NOT a valid category. Always return a real category.
-
 Respond with ONLY raw JSON (no markdown):
-{{"category": "<name>", "is_new": true/false, "confidence": 0.0-1.0}}"""
+{{
+  "category": "<name>", 
+  "is_new": true/false, 
+  "confidence": 0.0-1.0, 
+  "urgency": "Critical" | "High" | "Medium" | "Low"
+}}
+
+Urgency Rules:
+- "Critical": Immediate action today or extremely impactful (e.g. interview today, deadline today).
+- "High": Important with a deadline in 1-3 days (e.g. new assignment, meeting invite).
+- "Medium": Standard informative mail.
+- "Low": General promotion or non-urgent mail.
+
+Rules:
+1. Always pick the best category.
+2. Only set "is_new": true if it doesn't fit existing categories."""
 
         try:
             raw_text = _call_gemini_with_retry(self.gemini, prompt)
             raw = re.sub(r"^```json\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE).strip()
             parsed = json.loads(raw)
-            category   = parsed.get("category", "")
-            is_new     = parsed.get("is_new", False)
+            category = parsed.get("category", labels[0])
+            is_new = parsed.get("is_new", False)
             confidence = float(parsed.get("confidence", 0.9))
-
-            if not category or category == "Unknown":
-                raise ValueError("Empty/Unknown response from Gemini")
+            urgency = parsed.get("urgency", "Low")
+            
+            if urgency not in ["Critical", "High", "Medium", "Low"]:
+                urgency = "Low"
             if category in labels:
                 is_new = False
 
-            print(f"[Classifier] Tier 2 (Gemini 2.5 Flash) → '{category}' (new={is_new}, conf={confidence:.2f})")
-            return {"category": category, "confidence": confidence, "is_new_category": is_new}
+            return {"category": category, "confidence": confidence, "is_new_category": is_new, "urgency": urgency}
 
         except Exception as e:
-            print(f"[Classifier] Gemini unavailable after retries ({type(e).__name__}), using keyword fallback.")
-
-        # ── Tier 3: Best keyword match as final fallback ──────────────────────
-        if cat:
-            print(f"[Classifier] Keyword fallback → '{cat}'")
-            return {"category": cat, "confidence": 0.50, "is_new_category": False}
-
-        print("[Classifier] No match at all, defaulting to 'Personal'")
-        return {"category": "Personal", "confidence": 0.40, "is_new_category": False}
+            print(f"[Classifier] Gemini fallback to keyword due to error: {e}")
+            if cat:
+                return {"category": cat, "confidence": 0.5, "is_new_category": False, "urgency": "Low"}
+            return {"category": "Personal", "confidence": 0.4, "is_new_category": False, "urgency": "Low"}
 
     def classify_batch(self, emails, labels):
-        """
-        Classify a batch of emails in a single Gemini API call.
-        emails: list of {"id": int, "text": str}
-        labels: list of category strings
-        Returns: dict of {id: {"category": str, "confidence": float, "is_new_category": bool}}
-        """
-        if not emails:
-            return {}
-
+        if not emails: return {}
         existing_str = ", ".join(f'"{c}"' for c in labels)
-        # Build a numbered list for the prompt
-        email_block = "\n".join(
-            f'{e["id"]}. """{e["text"][:600]}"""' for e in emails
-        )
+        email_block = "\n".join(f'{e["id"]}. """{e["text"][:600]}"""' for e in emails)
 
-        prompt = f"""You are an intelligent email categorisation assistant.
-
-Existing categories: [{existing_str}]
-
-Classify each numbered email below. For each:
-1. Pick the single most appropriate existing category.
-2. Only create a new category (1–3 words, Title Case) if none fit.
-3. "Unknown" is NOT valid.
-
-Emails:
-{email_block}
-
-Respond ONLY with raw JSON (no markdown), mapping each number to its result:
+        prompt = f"""Classify each email. Existing: [{existing_str}]
+Respond ONLY with JSON mapping ID to result:
 {{
-  "0": {{"category": "<name>", "is_new": false, "confidence": 0.85}},
-  "1": {{"category": "<name>", "is_new": false, "confidence": 0.90}},
+  "0": {{"category": "<name>", "is_new": false, "confidence": 0.85, "urgency": "Low"}},
   ...
-}}"""
+}}
+Urgency: Critical, High, Medium, Low."""
 
         try:
             raw_text = _call_gemini_with_retry(self.gemini, prompt)
@@ -271,27 +238,15 @@ Respond ONLY with raw JSON (no markdown), mapping each number to its result:
             for e in emails:
                 key = str(e["id"])
                 cls = parsed.get(key, {})
-                category   = cls.get("category", labels[0] if labels else "Personal")
-                is_new     = cls.get("is_new", False)
-                confidence = float(cls.get("confidence", 0.80))
-                if category in labels:
-                    is_new = False
+                category = cls.get("category", labels[0] if labels else "Personal")
+                urgency = cls.get("urgency", "Low")
                 results[e["id"]] = {
                     "category": category,
-                    "confidence": confidence,
-                    "is_new_category": is_new,
+                    "confidence": float(cls.get("confidence", 0.85)),
+                    "is_new_category": cls.get("is_new", False),
+                    "urgency": urgency if urgency in ["Critical", "High", "Medium", "Low"] else "Low"
                 }
             return results
-
         except Exception as e:
-            print(f"[Classifier] Batch Gemini call failed ({type(e).__name__}), falling back to per-email keyword.")
-            results = {}
-            for em in emails:
-                t = em["text"].lower()
-                cat, score = keyword_classify(t, "", labels)
-                results[em["id"]] = {
-                    "category": cat or (labels[0] if labels else "Personal"),
-                    "confidence": score if score > 0 else 0.40,
-                    "is_new_category": False,
-                }
-            return results
+            print(f"[Classifier] Batch failed: {e}")
+            return {e["id"]: {"category": "Personal", "confidence": 0.5, "is_new_category": False, "urgency": "Low"} for e in emails}

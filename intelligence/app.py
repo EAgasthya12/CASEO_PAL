@@ -7,7 +7,7 @@ import logging
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-# ── Logging (must be set up before model loading so startup messages are captured)
+# ── Logging (must be set up before model loading)
 logging.basicConfig(
     filename='app_debug.log',
     level=logging.DEBUG,
@@ -20,6 +20,14 @@ logging.getLogger().addHandler(console_handler)
 
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
+
+URGENCY_RANK = {"Critical": 3, "High": 2, "Medium": 1, "Low": 0}
+rank_to_urs = {3: "Critical", 2: "High", 1: "Medium", 0: "Low"}
+
+def combine_urgency(u1, u2):
+    r1 = URGENCY_RANK.get(u1, 0)
+    r2 = URGENCY_RANK.get(u2, 0)
+    return rank_to_urs[max(r1, r2)]
 
 load_dotenv()
 
@@ -74,14 +82,17 @@ def classify():
         cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
 
         # Deadline + urgency extraction
-        deadlines, urgency = extractor.extract_deadlines(text)
+        deadlines, date_urgency = extractor.extract_deadlines(text)
+        
+        # Combine: take the more urgent signal
+        final_urgency = combine_urgency(cls_result.get('urgency', 'Low'), date_urgency)
 
         return jsonify({
             "category": cls_result['category'],
             "confidence": cls_result['confidence'],
             "is_new_category": cls_result.get('is_new_category', False),
             "deadlines": deadlines,
-            "urgency": urgency
+            "urgency": final_urgency
         })
     except Exception as e:
         logging.error(f"Error in /classify endpoint: {e}", exc_info=True)
@@ -120,15 +131,18 @@ def classify_batch():
             for j, item in enumerate(batch):
                 msg_id = item["id"]
                 cls = batch_result.get(j, {
-                    "category": labels[0], "confidence": 0.50, "is_new_category": False
+                    "category": labels[0], "confidence": 0.50, "is_new_category": False, "urgency": "Low"
                 })
-                deadlines, urgency = extractor.extract_deadlines(item["text"])
+                deadlines, date_urgency = extractor.extract_deadlines(item["text"])
+                
+                final_urgency = combine_urgency(cls.get("urgency", "Low"), date_urgency)
+                
                 all_results[msg_id] = {
                     "category": cls["category"],
                     "confidence": cls["confidence"],
                     "is_new_category": cls.get("is_new_category", False),
                     "deadlines": deadlines,
-                    "urgency": urgency
+                    "urgency": final_urgency
                 }
 
         return jsonify({"results": all_results})

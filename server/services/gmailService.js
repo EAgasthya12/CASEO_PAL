@@ -29,7 +29,7 @@ const getOAuthClient = (user) => {
  * @param {Object} user  - Authenticated user document
  * @param {Function} [onProgress] - Optional callback(processed, total) for progress updates
  */
-const fetchAndProcessEmails = async (user, onProgress) => {
+const fetchAndProcessEmails = async (user, onProgress, maxThreads = 100) => {
     try {
         if (!user.accessToken) throw new Error('No access token found for user');
 
@@ -38,7 +38,7 @@ const fetchAndProcessEmails = async (user, onProgress) => {
         console.log(`[GmailService] Fetching inbox threads for ${user.email}…`);
 
         // ── Step 1: Paginate through inbox THREADS (matches Gmail UI thread count) ──
-        const MAX_THREADS = 500;
+        const MAX_THREADS = maxThreads;
         const allThreadIds = [];
         let pageToken;
         do {
@@ -84,7 +84,8 @@ const fetchAndProcessEmails = async (user, onProgress) => {
         const currentIdSet = new Set(currentMessageIds);
         console.log(`[GmailService] Resolved ${currentMessageIds.length} current inbox message IDs.`);
 
-        // ── Step 3: Cleanup — remove stale DB records no longer in inbox ─────────
+        // ── Step 3: Cleanup — (Skipping aggressive cleanup to preserve scanned emails) ──
+        /*
         const storedIds = (
             await Email.find({ userId: user._id }).select('googleMessageId').lean()
         ).map(e => e.googleMessageId);
@@ -94,6 +95,7 @@ const fetchAndProcessEmails = async (user, onProgress) => {
             await Email.deleteMany({ userId: user._id, googleMessageId: { $in: staleIds } });
             console.log(`[GmailService] Cleaned up ${staleIds.length} stale emails.`);
         }
+        */
 
         // ── Step 4: Find which IDs are new (not yet in DB) ───────────────────────
         const existingIds = new Set(
@@ -107,7 +109,8 @@ const fetchAndProcessEmails = async (user, onProgress) => {
 
         if (newIds.length === 0) {
             console.log('[GmailService] All emails already up to date.');
-            return await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
+            const existing = await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
+            return { emails: existing, newCount: 0 };
         }
 
         // ── Step 5: Fetch full content for new messages (chunks of 20) ──────────
@@ -191,7 +194,7 @@ const fetchAndProcessEmails = async (user, onProgress) => {
             _processRemainingBackground(gmail, remainingIds, user, userCategories, ignoredSenders, onProgress, priorityIds.length, newIds.length);
         }
 
-        return firstPage;
+        return { emails: firstPage, newCount: newIds.length };
 
     } catch (error) {
         console.error('[GmailService] fetchAndProcessEmails error:', error.message);
@@ -320,7 +323,7 @@ const _fetchDetail = async (gmail, id) => {
 };
 
 /**
- * Internal: process remaining emails in background (fire and forget — called after first response)
+ * Internal: process remaining emails in background
  */
 const _processRemainingBackground = (gmail, ids, user, userCategories, ignoredSenders, onProgress, processed, total) => {
     setImmediate(async () => {
@@ -330,12 +333,14 @@ const _processRemainingBackground = (gmail, ids, user, userCategories, ignoredSe
                 const chunk = ids.slice(i, i + CHUNK);
                 await _processAndSave(gmail, chunk, user, userCategories, ignoredSenders);
                 processed += chunk.length;
-                if (onProgress) onProgress(processed, total);
+                if (onProgress) onProgress(processed, total, true);
                 console.log(`[GmailService] Background progress: ${processed}/${total}`);
             }
             console.log(`[GmailService] Background processing complete.`);
+            if (onProgress) onProgress(total, total, false); // Final completion signal
         } catch (err) {
             console.error('[GmailService] Background processing error:', err.message);
+            if (onProgress) onProgress(processed, total, false); // Stop on error
         }
     });
 };
@@ -391,18 +396,36 @@ const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
 
 /**
  * Get Gmail label message counts for SENT and SPAM.
+ * Added error resilience: if one fails (e.g. label hidden), other still returns.
  */
 const getLabelMessageCounts = async (user) => {
     const auth = getOAuthClient(user);
     const gmail = google.gmail({ version: 'v1', auth });
-    const [sentLabel, spamLabel] = await Promise.all([
-        gmail.users.labels.get({ userId: 'me', id: 'SENT' }),
-        gmail.users.labels.get({ userId: 'me', id: 'SPAM' }),
-    ]);
-    return {
-        sent: sentLabel.data.messagesTotal || 0,
-        spam: spamLabel.data.messagesTotal || 0,
+    
+    const fetchCount = async (id) => {
+        try {
+            const res = await gmail.users.labels.get({ userId: 'me', id });
+            return res.data.messagesTotal || 0;
+        } catch (e) {
+            console.warn(`[GmailService] Could not fetch count for label ${id}:`, e.message);
+            return 0; // Fallback to 0 if label API fails
+        }
     };
+
+    const [sent, spam, priority] = await Promise.all([
+        fetchCount('SENT'),
+        fetchCount('SPAM'),
+        Email.countDocuments({
+            userId: user._id,
+            isUseful: { $ne: false },
+            $or: [
+                { urgency: { $in: ['Critical', 'High'] } },
+                { 'extractedDeadlines.date': { $gt: new Date() } }
+            ]
+        })
+    ]);
+
+    return { sent, spam, priority };
 };
 
 module.exports = { fetchAndProcessEmails, fetchMailboxEmails, getLabelMessageCounts };

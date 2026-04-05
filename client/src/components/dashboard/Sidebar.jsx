@@ -1,11 +1,11 @@
 import React from 'react';
 import { InboxIcon, PriorityIcon, SentIcon, SpamIcon, LogoutIcon, ShieldIcon } from './Icons';
 
-const Sidebar = ({ activeTab, emails, labelCounts, user, imgError, setImgError, switchTab, setActiveTab, handleLogout }) => {
+const Sidebar = ({ activeTab, emails, inboxTotal, labelCounts, user, imgError, setImgError, switchTab, setActiveTab, handleLogout }) => {
     const now = new Date();
     const priorityCount = emails.filter(e =>
-        e.extractedDeadlines?.length > 0 &&
-        e.extractedDeadlines.some(d => new Date(d.date) > now)
+        (e.urgency === 'Critical' || e.urgency === 'High') ||
+        (e.extractedDeadlines?.length > 0 && e.extractedDeadlines.some(d => new Date(d.date) > now))
     ).length;
 
     const unreadCount = emails.filter(e => !e.isRead).length;
@@ -15,7 +15,7 @@ const Sidebar = ({ activeTab, emails, labelCounts, user, imgError, setImgError, 
             id: 'inbox',
             label: 'Inbox',
             icon: <InboxIcon />,
-            count: unreadCount === 0 ? emails.length : null,
+            count: inboxTotal || emails.length || null,
             badge: unreadCount > 0 ? unreadCount : null,
             badgeTitle: `${unreadCount} unread`,
         },
@@ -23,7 +23,7 @@ const Sidebar = ({ activeTab, emails, labelCounts, user, imgError, setImgError, 
             id: 'priority',
             label: 'Priority',
             icon: <PriorityIcon />,
-            count: priorityCount,
+            count: labelCounts.priority ?? 0,
         },
         {
             id: 'sent',

@@ -1870,3 +1870,106 @@
         display: none;
     }
 }
+
+/* ════════════════════
+   PAGINATION (Inline Arrows)
+════════════════════ */
+.pagination-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+}
+
+.pagination-arrow-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+/* ── Simple Pagination Arrows ── */
+.pagination-inline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+}
+
+.pagination-arrow-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.pagination-arrow-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-1);
+    border-color: var(--text-2);
+}
+
+.pagination-arrow-btn:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+}
+
+.pagination-page-info {
+    font-size: 0.82rem;
+    color: var(--text-3);
+    padding: 0 10px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+}
+
+[data-theme="light"] .pagination-arrow-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-1);
+}
+
+
+
+
+/* -- Heading + total count badge -- */
+.heading-with-count {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.inbox-total-badge {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+}
+
+[data-theme="light"] .inbox-total-badge {
+    background: rgba(99, 102, 241, 0.08);
+    color: #4f46e5;
+    border-color: rgba(99, 102, 241, 0.2);
+}

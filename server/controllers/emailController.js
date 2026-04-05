@@ -25,15 +25,30 @@ exports.getEmails = async (req, res) => {
         const skip  = (page - 1) * limit;
 
         const tab = req.query.tab || 'inbox';
-        const isUsefulQuery = tab === 'not_useful' ? { isUseful: false } : { isUseful: { $ne: false } };
+        
+        let query = { userId: req.user._id };
+
+        if (tab === 'not_useful') {
+            query.isUseful = false;
+        } else {
+            query.isUseful = { $ne: false };
+        }
+
+        if (tab === 'priority') {
+            const now = new Date();
+            query.$or = [
+                { urgency: { $in: ['Critical', 'High'] } },
+                { 'extractedDeadlines.date': { $gt: now } }
+            ];
+        }
 
         const [emails, total] = await Promise.all([
-            Email.find({ userId: req.user._id, ...isUsefulQuery })
+            Email.find(query)
                 .sort({ date: -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean(),
-            Email.countDocuments({ userId: req.user._id, ...isUsefulQuery }),
+            Email.countDocuments(query),
         ]);
 
         res.json({
@@ -189,22 +204,25 @@ exports.getScanStatus = (req, res) => {
 // ── Force reclassify (background) ────────────────────────────────────────────
 exports.forceReclassify = async (req, res) => {
     const userId = req.user._id.toString();
+    const maxThreads = Math.min(500, parseInt(req.query.maxThreads) || 100);
 
-    if (scanStatus[userId]?.running) {
+    const currentScan = scanStatus[userId];
+    if (currentScan?.running && (currentScan.maxThreads >= maxThreads)) {
         return res.json({ success: true, message: 'Scan already in progress', running: true });
     }
 
-    scanStatus[userId] = { running: true, processed: 0, total: 0 };
+    scanStatus[userId] = { running: true, processed: 0, total: 0, maxThreads };
     res.json({ success: true, message: 'Scan started in background', running: true });
 
-    const onProgress = (processed, total) => {
-        scanStatus[userId] = { running: true, processed, total };
+    const onProgress = (processed, total, running = true) => {
+        scanStatus[userId] = { running, processed, total, maxThreads };
     };
 
-    fetchAndProcessEmails(req.user, onProgress)
-        .then(emails => {
-            scanStatus[userId] = { running: false, processed: emails.length, total: emails.length };
-            console.log(`[EmailController] Scan complete for ${req.user.email}: ${emails.length} total emails.`);
+    fetchAndProcessEmails(req.user, onProgress, maxThreads)
+        .then(result => {
+            // result is now { emails, newCount }
+            scanStatus[userId] = { running: false, processed: result.newCount, total: result.newCount, maxThreads };
+            console.log(`[EmailController] Scan complete for ${req.user.email}: ${result.newCount} new emails.`);
         })
         .catch(err => {
             scanStatus[userId] = { running: false, processed: 0, total: 0, error: err.message };
