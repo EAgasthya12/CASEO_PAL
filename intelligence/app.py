@@ -125,7 +125,7 @@ def classify_batch():
         for i in range(0, len(emails), batch_size):
             batch = emails[i:i + batch_size]
             # Re-index within the batch for the prompt
-            indexed = [{"id": j, "text": item["text"]} for j, item in enumerate(batch)]
+            indexed = [{"id": j, "text": item.get("text", ""), "sender": item.get("sender", "")} for j, item in enumerate(batch)]
             batch_result = classifier.classify_batch(indexed, labels)
 
             for j, item in enumerate(batch):

@@ -153,8 +153,8 @@ def _call_gemini_with_retry(model, prompt, max_attempts=3):
 
 class EmailClassifier:
     def __init__(self):
-        self.gemini = genai.GenerativeModel("gemini-1.5-flash") # Fixed model name
-        print("[Classifier] Ready - Tier 1 keywords + Tier 2 Gemini Flash.")
+        self.gemini = genai.GenerativeModel("gemini-1.5-flash-latest") # Auto-updates to the latest flash version
+        print("[Classifier] Ready - Tier 1 keywords + Tier 2 Gemini Flash (Latest).")
 
     def classify(self, text, user_categories=None, sender=""):
         if text and len(text) > 2000:
@@ -165,18 +165,20 @@ class EmailClassifier:
         sender_lower = sender.lower() if sender else ""
 
         cat, score = keyword_classify(text_lower, sender_lower, labels)
-        if cat and score >= CONFIDENCE_THRESHOLD:
-            return {"category": cat, "confidence": score, "is_new_category": False, "urgency": "Low"}
+        # We no longer return early here. We want Gemini to evaluate the "proper intention" 
+        # and give us an accurate "urgency" score. Keyword match is kept as fallback.
 
         existing_str = ", ".join(f'"{c}"' for c in labels)
+        hint_str = f" [System Keyword/Sender rule suggests: '{cat}']" if cat else ""
         prompt = f"""You are an intelligent email categorisation assistant.
 
 Existing categories: [{existing_str}]
 
 Email content:
+{hint_str}
 \"\"\"{text}\"\"\"
 
-Respond with ONLY raw JSON (no markdown):
+Analyze the complete proper intention of the email and respond with ONLY raw JSON (no markdown):
 {{
   "category": "<name>", 
   "is_new": true/false, 
@@ -184,15 +186,16 @@ Respond with ONLY raw JSON (no markdown):
   "urgency": "Critical" | "High" | "Medium" | "Low"
 }}
 
-Urgency Rules:
-- "Critical": Immediate action today or extremely impactful (e.g. interview today, deadline today).
-- "High": Important with a deadline in 1-3 days (e.g. new assignment, meeting invite).
-- "Medium": Standard informative mail.
-- "Low": General promotion or non-urgent mail.
+Urgency Rules (CRITICAL to understand true intention):
+- "Critical": Immediate action required today or extremely impactful (e.g., job offer, final interview, account block, urgent deadline today).
+- "High": Important with a near deadline, or highly relevant opportunities (e.g., meeting invite, new assignment, interview shortlisting, high-value opportunity).
+- "Medium": Standard informative mail (e.g., general updates, bank statements, receipts).
+- "Low": General promotions, generic newsletters, spam, or non-urgent mail.
 
 Rules:
-1. Always pick the best category.
-2. Only set "is_new": true if it doesn't fit existing categories."""
+1. Always pick the best category based on the actual intention of the email.
+2. Carefully evaluate the true intention for urgency. If it's a personal opportunity or important update, rank it High or Critical.
+3. Only set "is_new": true if it genuinely doesn't fit existing categories."""
 
         try:
             raw_text = _call_gemini_with_retry(self.gemini, prompt)
@@ -219,15 +222,34 @@ Rules:
     def classify_batch(self, emails, labels):
         if not emails: return {}
         existing_str = ", ".join(f'"{c}"' for c in labels)
-        email_block = "\n".join(f'{e["id"]}. """{e["text"][:600]}"""' for e in emails)
+        
+        email_blocks = []
+        for e in emails:
+            text_lower = e.get("text", "").lower()
+            sender_lower = e.get("sender", "").lower()
+            cat, score = keyword_classify(text_lower, sender_lower, labels)
+            hint_str = f"[System Hint: '{cat}'] " if cat else ""
+            email_blocks.append(f'{e["id"]}. {hint_str}"""{e["text"][:600]}"""')
 
-        prompt = f"""Classify each email. Existing: [{existing_str}]
-Respond ONLY with JSON mapping ID to result:
+        email_block = "\n".join(email_blocks)
+
+        prompt = f"""You are an intelligent email categorisation assistant.
+Analyze the complete proper intention of each email. Existing categories: [{existing_str}]
+
+Emails to classify:
+{email_block}
+
+Respond ONLY with raw JSON mapping the ID to the result:
 {{
   "0": {{"category": "<name>", "is_new": false, "confidence": 0.85, "urgency": "Low"}},
   ...
 }}
-Urgency: Critical, High, Medium, Low."""
+
+Urgency Rules (CRITICAL to understand true intention):
+- "Critical": Urgent action needed today, immense impact (e.g., job offer, imminent deadline).
+- "High": Important opportunity or near deadline (e.g., interview shortlisting, assignment, important events).
+- "Medium": Normal informative mail (e.g., updates, transaction alerts).
+- "Low": Promotion, newsletter, non-urgent."""
 
         try:
             raw_text = _call_gemini_with_retry(self.gemini, prompt)

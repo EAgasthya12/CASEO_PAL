@@ -385,6 +385,34 @@ const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
         );
 
         const results = details.filter(Boolean);
+        
+        if (label === 'SPAM' && results.length > 0) {
+            console.log(`[GmailService] Checking SPAM batch for important emails...`);
+            const userDoc = await User.findById(user._id).select('categories');
+            const userCategories = userDoc?.categories || [];
+
+            const batchInput = results.map(r => ({
+                id: r._id,
+                text: `${r.subject}\n${r.snippet}`,
+                sender: r.sender || ''
+            }));
+            
+            const intelMap = await analyzeBatch(batchInput, userCategories);
+
+            results.forEach(r => {
+                const intel = intelMap[r._id];
+                if (intel) {
+                    r.category = intel.category;
+                    r.urgency = intel.urgency;
+                    r.extractedDeadlines = intel.deadlines || [];
+                    
+                    if (intel.urgency === 'High' || intel.urgency === 'Critical') {
+                        r.isPotentiallyImportant = true;
+                    }
+                }
+            });
+        }
+
         console.log(`[GmailService] Fetched ${results.length} messages from ${label}.`);
         return results;
 
@@ -412,20 +440,46 @@ const getLabelMessageCounts = async (user) => {
         }
     };
 
-    const [sent, spam, priority] = await Promise.all([
-        fetchCount('SENT'),
-        fetchCount('SPAM'),
-        Email.countDocuments({
-            userId: user._id,
-            isUseful: { $ne: false },
-            $or: [
-                { urgency: { $in: ['Critical', 'High'] } },
-                { 'extractedDeadlines.date': { $gt: new Date() } }
-            ]
-        })
+    const priorityQuery = Email.countDocuments({
+        userId: user._id,
+        isUseful: { $ne: false },
+        $or: [
+            { urgency: { $in: ['Critical', 'High'] } },
+            { 'extractedDeadlines.date': { $gt: new Date() } }
+        ]
+    });
+
+    const unreadQuery = Email.countDocuments({
+        userId: user._id,
+        isUseful: { $ne: false },
+        isRead: false
+    });
+    
+    const notUsefulQuery = Email.countDocuments({
+        userId: user._id,
+        isUseful: false
+    });
+
+    const categoriesQuery = Email.aggregate([
+        { $match: { userId: user._id, isUseful: { $ne: false } } },
+        { $group: { _id: "$category", count: { $sum: 1 } } }
     ]);
 
-    return { sent, spam, priority };
+    const [sent, spam, priority, unread, notUseful, categoriesRaw] = await Promise.all([
+        fetchCount('SENT'),
+        fetchCount('SPAM'),
+        priorityQuery,
+        unreadQuery,
+        notUsefulQuery,
+        categoriesQuery
+    ]);
+    
+    const categories = {};
+    for (const cat of (categoriesRaw || [])) {
+        if (cat._id) { categories[cat._id] = cat.count; }
+    }
+
+    return { sent, spam, priority, unread, notUseful, categories };
 };
 
 module.exports = { fetchAndProcessEmails, fetchMailboxEmails, getLabelMessageCounts };

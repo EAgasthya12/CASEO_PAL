@@ -92,7 +92,7 @@ const analyzeBatch = async (emails, userCategories = []) => {
         const response = await axios.post(
             `${PYTHON_API_URL}/classify-batch`,
             {
-                emails: emails.map(e => ({ id: e.id, text: e.text })),
+                emails: emails.map(e => ({ id: e.id, text: e.text, sender: e.sender || '' })),
                 user_categories: userCategories,
             },
             { timeout: REQUEST_TIMEOUT_MS * 3 }  // batch gets 3× timeout

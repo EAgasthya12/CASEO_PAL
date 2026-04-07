@@ -134,12 +134,16 @@ const Dashboard = () => {
                 try {
                     const res = await axios.get(`${API}/api/emails/scan-status`, { withCredentials: true });
                     setScanStatus(res.data);
+                    
+                    // Only fetch DB emails continuously, skip heavy Google API (labelCounts) while running
                     await fetchEmails();
-                    await fetchLabelCounts(); // Refresh sent/spam counts 
+                    
                     if (!res.data.running) {
                         clearInterval(poll);
                         setLoading(false);
                         setScanStatus({ running: false, processed: 0, total: 0 });
+                        await fetchLabelCounts(); // Only refresh heavy counts at the very end
+
                         if (res.data.processed === 0) {
                             toast.success('Your inbox is already up to date!');
                         } else {
@@ -308,7 +312,6 @@ const Dashboard = () => {
                                 setScanStatus(res.data);
                                 if (res.data.running) {
                                     fetchEmails();
-                                    fetchLabelCounts(); // Refresh sent/spam 
                                 } else {
                                     clearInterval(poll);
                                     setScanStatus({ running: false, processed: 0, total: 0 });
@@ -434,7 +437,7 @@ const Dashboard = () => {
                                                         role="menuitemcheckbox"
                                                         aria-checked={filterCategory === cat}
                                                     >
-                                                        {cat}
+                                                        {cat} {labelCounts?.categories?.[cat] ? `(${labelCounts.categories[cat]})` : ''}
                                                     </span>
                                                 ))}
                                             </div>

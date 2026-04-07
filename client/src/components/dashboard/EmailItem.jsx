@@ -130,7 +130,7 @@ const EmailItem = ({ email, index, onClick }) => {
 
 // ── MailboxItem — sent/spam email row (no AI tags) ────────────────────────────
 export const MailboxEmailItem = ({ email, tab, onClick }) => (
-    <div className="email-item urgency-low" onClick={() => onClick(email)} role="button" tabIndex={0}>
+    <div className={`email-item ${email.isPotentiallyImportant ? 'urgency-critical' : 'urgency-low'}`} onClick={() => onClick(email)} role="button" tabIndex={0}>
         <div className="email-content">
             <div className="email-header">
                 <div className="sender-info">
@@ -140,6 +140,7 @@ export const MailboxEmailItem = ({ email, tab, onClick }) => (
                             : senderName(email.sender)
                         }
                     </span>
+                    {email.isPotentiallyImportant && <span className="status-dot" aria-label="Important Spam" />}
                 </div>
                 <span className="email-time">
                     {new Date(email.date).toLocaleString('en-GB', {
@@ -148,8 +149,16 @@ export const MailboxEmailItem = ({ email, tab, onClick }) => (
                     })}
                 </span>
             </div>
-            <h3 className="email-subject">{decodeHtmlEntities(email.subject)}</h3>
+            <h3 className="email-subject">
+                {email.isPotentiallyImportant && <span className="urgent-prefix" style={{color: '#dc2626'}}>NOT SPAM?</span>}{' '}
+                {decodeHtmlEntities(email.subject)}
+            </h3>
             <p className="email-snippet">{decodeHtmlEntities(email.snippet)}</p>
+            {email.isPotentiallyImportant && (
+                <div className="email-tags">
+                    <span className="tag tag-critical">⚠ IMPORTANT SPAM DETECTED ({email.category})</span>
+                </div>
+            )}
         </div>
     </div>
 );

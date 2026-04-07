@@ -8,7 +8,7 @@ const Sidebar = ({ activeTab, emails, inboxTotal, labelCounts, user, imgError, s
         (e.extractedDeadlines?.length > 0 && e.extractedDeadlines.some(d => new Date(d.date) > now))
     ).length;
 
-    const unreadCount = emails.filter(e => !e.isRead).length;
+    const unreadCount = labelCounts?.unread || 0;
 
     const navItems = [
         {
@@ -46,6 +46,7 @@ const Sidebar = ({ activeTab, emails, inboxTotal, labelCounts, user, imgError, s
             id: 'not_useful',
             label: 'Not Useful',
             icon: <ShieldIcon />,
+            count: labelCounts?.notUseful != null ? labelCounts.notUseful : null,
             isMailbox: true, // we handle it like a mailbox since it fetches differently
         }
     ];
