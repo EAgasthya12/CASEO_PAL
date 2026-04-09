@@ -1,14 +1,9 @@
 import React from 'react';
 import { InboxIcon, PriorityIcon, SentIcon, SpamIcon, LogoutIcon, ShieldIcon } from './Icons';
 
-const Sidebar = ({ activeTab, emails, inboxTotal, labelCounts, user, imgError, setImgError, switchTab, setActiveTab, handleLogout }) => {
-    const now = new Date();
-    const priorityCount = emails.filter(e =>
-        (e.urgency === 'Critical' || e.urgency === 'High') ||
-        (e.extractedDeadlines?.length > 0 && e.extractedDeadlines.some(d => new Date(d.date) > now))
-    ).length;
-
+const Sidebar = ({ activeTab, emails, priorityPreview, inboxTotal, labelCounts, user, imgError, setImgError, switchTab, setActiveTab, openPriorityEmail, handleLogout }) => {
     const unreadCount = labelCounts?.unread || 0;
+    const totalPriorityCount = labelCounts?.priority ?? priorityPreview?.length ?? 0;
 
     const navItems = [
         {
@@ -58,7 +53,8 @@ const Sidebar = ({ activeTab, emails, inboxTotal, labelCounts, user, imgError, s
                 <span className="logo-text">CASEO</span>
             </div>
 
-            <div className="sidebar-section-label">Mailbox</div>
+            <div className="sidebar-scrollable">
+                <div className="sidebar-section-label">Mailbox</div>
             <nav className="sidebar-nav">
                 {navItems.map(item => (
                     <button
@@ -81,6 +77,59 @@ const Sidebar = ({ activeTab, emails, inboxTotal, labelCounts, user, imgError, s
                 ))}
             </nav>
 
+            {priorityPreview?.length > 0 && (
+                <>
+                    <div className="sidebar-section-label sidebar-priority-label">Priority Now</div>
+                    <div className="priority-preview-list">
+                        {(() => {
+                            const urgencyOrder = { 'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
+                            const sorted = [...priorityPreview].sort((a, b) => {
+                                // 1. Primary Sort: Urgency Level (Highest First)
+                                const aOrd = urgencyOrder[a.urgency] ?? 4;
+                                const bOrd = urgencyOrder[b.urgency] ?? 4;
+                                if (aOrd !== bOrd) return aOrd - bOrd;
+                                
+                                // 2. Secondary Sort: Priority Score (Highest First)
+                                if ((b.priorityScore || 0) !== (a.priorityScore || 0)) {
+                                    return (b.priorityScore || 0) - (a.priorityScore || 0);
+                                }
+
+                                // 3. Tertiary Sort: Date (Most Recent First)
+                                return new Date(b.date) - new Date(a.date);
+                            });
+                            return sorted.slice(0, 5).map((email) => (
+                                <button
+                                    key={email._id}
+                                    className="priority-preview-card"
+                                    onClick={() => openPriorityEmail(email)}
+                                    title={email.subject}
+                                >
+                                    <div className="priority-preview-top">
+                                        <span className={`priority-pill priority-${(email.urgency || 'Low').toLowerCase()}`}>
+                                            {email.urgency || 'Low'}
+                                        </span>
+                                        {!email.isRead && <span className="priority-unread-dot" />}
+                                    </div>
+                                    <div className="priority-preview-subject">{email.subject}</div>
+                                    <div className="priority-preview-meta">
+                                        <span>{email.sender}</span>
+                                        <span>{new Date(email.date).toLocaleDateString('en-GB')}</span>
+                                    </div>
+                                </button>
+                            ));
+                        })()}
+                        <button
+                            className="priority-preview-link"
+                            onClick={() => switchTab('priority')}
+                        >
+                            {totalPriorityCount > 5
+                                ? `View all ${totalPriorityCount} priority mails`
+                                : 'Open full priority inbox'}
+                        </button>
+                    </div>
+                </>
+            )}
+
             <div className="sidebar-section-label" style={{ marginTop: '24px' }}>Preferences</div>
             <nav className="sidebar-nav">
                 {preferenceItems.map(item => (
@@ -94,6 +143,8 @@ const Sidebar = ({ activeTab, emails, inboxTotal, labelCounts, user, imgError, s
                     </button>
                 ))}
             </nav>
+
+            </div>
 
             <div className="user-profile">
                 <div className="user-details">

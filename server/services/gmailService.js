@@ -3,7 +3,120 @@ const { analyzeBatch } = require('./pythonBridge');
 const Email = require('../models/Email');
 const User = require('../models/User');
 
-const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5001';
+const DEFAULT_CATEGORIES = ['Academic', 'Internship', 'Job', 'Event', 'Finance', 'Newsletter', 'Personal'];
+const INITIAL_SYNC_LIMIT = 250;
+const PRIORITY_BATCH = 50;
+
+const buildPriorityFilter = () => ({
+    $or: [
+        { isPriority: true },
+        { urgency: { $in: ['Critical', 'High'] } },
+        { 'extractedDeadlines.date': { $gt: new Date() } },
+    ],
+});
+
+const htmlToPlainText = (html = '') =>
+    html
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const buildAnalysisText = ({ subject = '', snippet = '', plainTextBody = '' }) => {
+    const normalizedSnippet = snippet.trim();
+    const normalizedBody = plainTextBody.trim();
+    const combined = [
+        `Subject: ${subject}`.trim(),
+        normalizedSnippet ? `Snippet: ${normalizedSnippet}` : '',
+        normalizedBody ? `Body: ${normalizedBody.slice(0, 3500)}` : '',
+    ].filter(Boolean);
+
+    return combined.join('\n');
+};
+
+const needsReclassification = (email) =>
+    !email ||
+    email.isProcessed !== true ||
+    !email.category ||
+    email.category === 'Unknown' ||
+    (email.category === 'Personal' && (email.confidence ?? 0) < 0.9) ||
+    (email.confidence ?? 0) < 0.75 ||
+    email.isPriority === undefined ||
+    email.priorityScore === undefined;
+
+const computePrioritySignals = ({ subject = '', snippet = '', plainTextBody = '', urgency = 'Low', deadlines = [] }) => {
+    const now = new Date();
+    const text = `${subject}\n${snippet}\n${plainTextBody}`.toLowerCase();
+    const signalPatterns = [
+        /\burgent\b/g,
+        /\bimmediate(?:ly)?\b/g,
+        /\baction required\b/g,
+        /\bdeadline\b/g,
+        /\bdue\b/g,
+        /\blast date\b/g,
+        /\bapply (?:by|before)\b/g,
+        /\bsubmit (?:by|before)\b/g,
+        /\bregistration deadline\b/g,
+        /\bassignment due\b/g,
+        /\binterview\b/g,
+        /\breporting date\b/g,
+        /\bjoining date\b/g,
+        /\boffer letter\b/g,
+        /\bshortlisted\b/g,
+        /\bpayment failed\b/g,
+        /\baccount (?:blocked|suspended|verification)\b/g,
+        /\botp\b/g,
+        /\bverification code\b/g,
+        /\bsecurity alert\b/g,
+        /\bhackathon\b/g,
+        /\bpassword reset\b/g,
+        /\bonline assessment\b/g,
+        /\bassignment\b/g,
+    ];
+
+    let keywordHits = 0;
+    for (const pattern of signalPatterns) {
+        const matches = text.match(pattern);
+        keywordHits += matches ? matches.length : 0;
+    }
+
+    const urgencyWeight = { Low: 15, Medium: 40, High: 70, Critical: 90 }[urgency] ?? 15;
+    const upcomingDeadlines = (deadlines || [])
+        .map((deadline) => new Date(deadline.date))
+        .filter((date) => !Number.isNaN(date.getTime()) && date > now)
+        .sort((a, b) => a - b);
+
+    let deadlineWeight = 0;
+    if (upcomingDeadlines.length > 0) {
+        const hoursUntilDeadline = (upcomingDeadlines[0].getTime() - now.getTime()) / 36e5;
+        const deadlineLabels = (deadlines || []).map((deadline) => `${deadline.label || ''}`.toLowerCase());
+        const actionDeadline = deadlineLabels.some((label) =>
+            label.includes('application') ||
+            label.includes('submission') ||
+            label.includes('interview') ||
+            label.includes('reporting')
+        );
+        if (hoursUntilDeadline <= 24) {
+            deadlineWeight = actionDeadline ? 100 : 92;
+        } else if (hoursUntilDeadline <= 72) {
+            deadlineWeight = actionDeadline ? 90 : 85;
+        } else if (hoursUntilDeadline <= 168) {
+            deadlineWeight = actionDeadline ? 75 : 65;
+        } else {
+            deadlineWeight = actionDeadline ? 55 : 45;
+        }
+    }
+
+    const priorityScore = Math.min(100, Math.max(urgencyWeight, deadlineWeight, Math.min(80, keywordHits * 12 + urgencyWeight)));
+    const isPriority = priorityScore >= 65 || urgency === 'Critical' || urgency === 'High' || deadlineWeight >= 65;
+
+    return { isPriority, priorityScore };
+};
 
 // ── Shared OAuth2 client factory ──────────────────────────────────────────────
 // Centralises credential setup — avoids copy-pasting across service + controllers.
@@ -29,7 +142,7 @@ const getOAuthClient = (user) => {
  * @param {Object} user  - Authenticated user document
  * @param {Function} [onProgress] - Optional callback(processed, total) for progress updates
  */
-const fetchAndProcessEmails = async (user, onProgress, maxThreads = 100) => {
+const fetchAndProcessEmails = async (user, onProgress, maxThreads = INITIAL_SYNC_LIMIT) => {
     try {
         if (!user.accessToken) throw new Error('No access token found for user');
 
@@ -105,9 +218,20 @@ const fetchAndProcessEmails = async (user, onProgress, maxThreads = 100) => {
         );
 
         const newIds = currentMessageIds.filter(id => !existingIds.has(id));
-        console.log(`[GmailService] ${existingIds.size} already stored, ${newIds.length} new to classify.`);
+        const existingDocs = await Email.find({
+            userId: user._id,
+            googleMessageId: { $in: currentMessageIds },
+        })
+            .select('googleMessageId category confidence isProcessed isPriority priorityScore')
+            .lean();
+        const refreshIds = existingDocs
+            .filter(needsReclassification)
+            .map((email) => email.googleMessageId);
+        const idsToProcess = [...new Set([...newIds, ...refreshIds])];
 
-        if (newIds.length === 0) {
+        console.log(`[GmailService] ${existingIds.size} already stored, ${newIds.length} new, ${refreshIds.length} existing to reclassify.`);
+
+        if (idsToProcess.length === 0) {
             console.log('[GmailService] All emails already up to date.');
             const existing = await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
             return { emails: existing, newCount: 0 };
@@ -174,27 +298,26 @@ const fetchAndProcessEmails = async (user, onProgress, maxThreads = 100) => {
         };
 
         // ── Step 6: PROGRESSIVE — process PRIORITY batch (50 newest) first ───────
-        const PRIORITY_BATCH = 50;
-        const priorityIds = newIds.slice(0, PRIORITY_BATCH);
-        const remainingIds = newIds.slice(PRIORITY_BATCH);
+        const priorityIds = idsToProcess.slice(0, PRIORITY_BATCH);
+        const remainingIds = idsToProcess.slice(PRIORITY_BATCH);
 
         const userDoc = await User.findById(user._id).select('categories ignoredSenders');
-        const userCategories = userDoc?.categories || [];
+        const userCategories = userDoc?.categories?.length ? userDoc.categories : DEFAULT_CATEGORIES;
         const ignoredSenders = userDoc?.ignoredSenders || [];
 
         console.log(`[GmailService] Priority batch: classifying ${priorityIds.length} newest emails first…`);
         await _processAndSave(gmail, priorityIds, user, userCategories, ignoredSenders);
-        if (onProgress) onProgress(priorityIds.length, newIds.length);
+        if (onProgress) onProgress(priorityIds.length, idsToProcess.length);
 
         // Return the first page of results immediately — the caller gets fast data
         const firstPage = await Email.find({ userId: user._id }).sort({ date: -1 }).lean();
 
         // ── Step 7: Background — process remaining emails without blocking ────────
         if (remainingIds.length > 0) {
-            _processRemainingBackground(gmail, remainingIds, user, userCategories, ignoredSenders, onProgress, priorityIds.length, newIds.length);
+            _processRemainingBackground(gmail, remainingIds, user, userCategories, ignoredSenders, onProgress, priorityIds.length, idsToProcess.length);
         }
 
-        return { emails: firstPage, newCount: newIds.length };
+        return { emails: firstPage, newCount: idsToProcess.length };
 
     } catch (error) {
         console.error('[GmailService] fetchAndProcessEmails error:', error.message);
@@ -221,7 +344,7 @@ const _processAndSave = async (gmail, ids, user, userCategories, ignoredSenders 
     // Batch-classify all at once via /classify-batch
     const batchInput = emailDetails.map(e => ({
         id: e.id,
-        text: `${e.subject}\n${e.snippet}`,
+        text: buildAnalysisText(e),
         sender: e.from,
     }));
 
@@ -231,6 +354,13 @@ const _processAndSave = async (gmail, ids, user, userCategories, ignoredSenders 
     await Promise.allSettled(
         emailDetails.map(async (e) => {
             const intel = intelMap[e.id] || { category: 'Personal', confidence: 0.4, urgency: 'Low', deadlines: [] };
+            const { isPriority, priorityScore } = computePrioritySignals({
+                subject: e.subject,
+                snippet: e.snippet,
+                plainTextBody: e.plainTextBody,
+                urgency: intel.urgency || 'Low',
+                deadlines: intel.deadlines || [],
+            });
 
             if (intel.is_new_category && intel.category && intel.category !== 'Unknown') {
                 await User.findByIdAndUpdate(user._id, { $addToSet: { categories: intel.category } });
@@ -250,6 +380,8 @@ const _processAndSave = async (gmail, ids, user, userCategories, ignoredSenders 
                     category: intel.category || 'Personal',
                     confidence: intel.confidence,
                     urgency: intel.urgency || 'Low',
+                    isPriority,
+                    priorityScore,
                     extractedDeadlines: intel.deadlines || [],
                     isProcessed: true,
                     isRead: false,
@@ -307,15 +439,19 @@ const _fetchDetail = async (gmail, id) => {
 
         const extracted = extractBody(payload);
         let body = '';
+        let plainTextBody = '';
         if (extracted) {
             body = Buffer.from(extracted.data, 'base64').toString('utf-8');
             if (extracted.mime === 'text/plain') {
+                plainTextBody = body;
                 const escaped = body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 body = `<pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;line-height:1.7">${escaped}</pre>`;
+            } else {
+                plainTextBody = htmlToPlainText(body);
             }
         }
 
-        return { id, subject, from, to, date, snippet, body };
+        return { id, subject, from, to, date, snippet, body, plainTextBody };
     } catch (err) {
         console.error(`[GmailService] Failed to fetch email ${id}:`, err.message);
         return null;
@@ -389,11 +525,15 @@ const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
         if (label === 'SPAM' && results.length > 0) {
             console.log(`[GmailService] Checking SPAM batch for important emails...`);
             const userDoc = await User.findById(user._id).select('categories');
-            const userCategories = userDoc?.categories || [];
+            const userCategories = userDoc?.categories?.length ? userDoc.categories : DEFAULT_CATEGORIES;
 
             const batchInput = results.map(r => ({
                 id: r._id,
-                text: `${r.subject}\n${r.snippet}`,
+                text: buildAnalysisText({
+                    subject: r.subject,
+                    snippet: r.snippet,
+                    plainTextBody: htmlToPlainText(r.body || ''),
+                }),
                 sender: r.sender || ''
             }));
             
@@ -405,10 +545,13 @@ const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
                     r.category = intel.category;
                     r.urgency = intel.urgency;
                     r.extractedDeadlines = intel.deadlines || [];
-                    
-                    if (intel.urgency === 'High' || intel.urgency === 'Critical') {
-                        r.isPotentiallyImportant = true;
-                    }
+                    r.isPotentiallyImportant = computePrioritySignals({
+                        subject: r.subject,
+                        snippet: r.snippet,
+                        plainTextBody: htmlToPlainText(r.body || ''),
+                        urgency: intel.urgency,
+                        deadlines: intel.deadlines || [],
+                    }).isPriority;
                 }
             });
         }
@@ -443,10 +586,7 @@ const getLabelMessageCounts = async (user) => {
     const priorityQuery = Email.countDocuments({
         userId: user._id,
         isUseful: { $ne: false },
-        $or: [
-            { urgency: { $in: ['Critical', 'High'] } },
-            { 'extractedDeadlines.date': { $gt: new Date() } }
-        ]
+        ...buildPriorityFilter(),
     });
 
     const unreadQuery = Email.countDocuments({

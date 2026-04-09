@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
@@ -11,7 +12,7 @@ import EmailModal from './dashboard/EmailModal';
 import { FilterIcon, SortIcon } from './dashboard/Icons';
 
 const MAILBOX_TABS = ['sent', 'spam'];
-const API = 'http://localhost:5000';
+const API = Capacitor.isNativePlatform() ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 
 const Dashboard = () => {
     // ── Core state ────────────────────────────────────────────────────────────
@@ -20,7 +21,7 @@ const Dashboard = () => {
     const [activeTab, setActiveTab]       = useState('inbox');
     const [user, setUser]                 = useState(null);
     const [selectedEmail, setSelectedEmail] = useState(null);
-    const [userCategories, setUserCategories] = useState(['Academic', 'Internship', 'Job', 'Event', 'Personal']);
+    const [userCategories, setUserCategories] = useState(['Academic', 'Internship', 'Job', 'Event', 'Finance', 'Newsletter', 'Personal']);
     const [imgError, setImgError]         = useState(false);
 
     // Theme — persisted in localStorage
@@ -35,6 +36,7 @@ const Dashboard = () => {
     const [mailboxEmails, setMailboxEmails]   = useState([]);
     const [mailboxLoading, setMailboxLoading] = useState(false);
     const [labelCounts, setLabelCounts]       = useState({ sent: null, spam: null });
+    const [priorityPreview, setPriorityPreview] = useState([]);
 
     // ── Filter / Sort state ───────────────────────────────────────────────────
     const [filterOpen, setFilterOpen]       = useState(false);
@@ -89,6 +91,15 @@ const Dashboard = () => {
         }
     };
 
+    const fetchPriorityPreview = useCallback(async () => {
+        try {
+            const res = await axios.get(`${API}/api/emails/priority-preview`, { withCredentials: true });
+            setPriorityPreview(res.data.emails || []);
+        } catch (err) {
+            console.error('Error fetching priority preview:', err);
+        }
+    }, []);
+
     const fetchMailbox = async (tab) => {
         setMailboxLoading(true);
         setMailboxEmails([]);
@@ -126,7 +137,7 @@ const Dashboard = () => {
         if (loading) return; // Allow manual sync to trigger even if silent autoSync is in background 
         setLoading(true);
         try {
-            await axios.post(`${API}/api/emails/reclassify?maxThreads=500`, {}, { withCredentials: true });
+            await axios.post(`${API}/api/emails/reclassify?maxThreads=250`, {}, { withCredentials: true });
             await fetchEmails();
             toast.success('Scan started — your inbox is updating in the background.');
 
@@ -137,12 +148,14 @@ const Dashboard = () => {
                     
                     // Only fetch DB emails continuously, skip heavy Google API (labelCounts) while running
                     await fetchEmails();
+                    await fetchPriorityPreview();
                     
                     if (!res.data.running) {
                         clearInterval(poll);
                         setLoading(false);
                         setScanStatus({ running: false, processed: 0, total: 0 });
                         await fetchLabelCounts(); // Only refresh heavy counts at the very end
+                        await fetchPriorityPreview();
 
                         if (res.data.processed === 0) {
                             toast.success('Your inbox is already up to date!');
@@ -294,6 +307,7 @@ const Dashboard = () => {
     useEffect(() => {
         fetchUser();
         fetchLabelCounts();
+        fetchPriorityPreview();
         
         // Fetch DB data first for instant render, then silently sync newest emails
         fetchEmails().then(() => {
@@ -304,7 +318,7 @@ const Dashboard = () => {
 
                     // Trigger the background sync without throwing a massive loading screen blocking the UI
                     setScanStatus({ running: true, processed: 0, total: 0, auto: true });
-                    await axios.post(`${API}/api/emails/reclassify?maxThreads=100`, {}, { withCredentials: true });
+                    await axios.post(`${API}/api/emails/reclassify?maxThreads=250`, {}, { withCredentials: true });
                     
                     const poll = setInterval(async () => {
                         try {
@@ -312,11 +326,13 @@ const Dashboard = () => {
                                 setScanStatus(res.data);
                                 if (res.data.running) {
                                     fetchEmails();
+                                    fetchPriorityPreview();
                                 } else {
                                     clearInterval(poll);
                                     setScanStatus({ running: false, processed: 0, total: 0 });
                                     fetchEmails();
                                     fetchLabelCounts(); // Final refresh
+                                    fetchPriorityPreview();
                                 }
                         } catch {
                             clearInterval(poll);
@@ -329,7 +345,7 @@ const Dashboard = () => {
             autoSync();
         });
         
-    }, [fetchEmails]);
+    }, [fetchEmails, fetchPriorityPreview]);
 
     const filteredEmails = searchQuery.trim() ? (searchResults ?? []) : processEmails();
     const categories = userCategories;
@@ -356,6 +372,7 @@ const Dashboard = () => {
             <Sidebar
                 activeTab={activeTab}
                 emails={emails}
+                priorityPreview={priorityPreview}
                 inboxTotal={pagination.total}
                 labelCounts={labelCounts}
                 user={user}
@@ -363,6 +380,7 @@ const Dashboard = () => {
                 setImgError={setImgError}
                 switchTab={switchTab}
                 setActiveTab={setActiveTab}
+                openPriorityEmail={openEmail}
                 handleLogout={handleLogout}
             />
 

@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { CalendarIcon, ExternalLinkIcon, ThumbsDownIcon } from './Icons';
+import { ExternalLinkIcon } from './Icons';
 import { decodeHtmlEntities, deduplicateDeadlines, deadlineTag } from './EmailItem';
+
+const API = window.Capacitor?.isNativePlatform?.() ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 
 
 // ── Pill Ribbon CSS injected once ─────────────────────────────────────────────
@@ -87,6 +89,51 @@ function formatDateDMY(dateStr) {
     return `${dd}-${mm}-${yyyy}`;
 }
 
+function formatDateTimeDetailed(dateStr) {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+
+    const hasTime = !(
+        d.getUTCHours() === 0 &&
+        d.getUTCMinutes() === 0 &&
+        d.getUTCSeconds() === 0 &&
+        d.getUTCMilliseconds() === 0
+    );
+
+    return d.toLocaleString('en-GB', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        ...(hasTime ? { hour: '2-digit', minute: '2-digit' } : {}),
+    });
+}
+
+function buildCalendarPayload(email, deadline) {
+    const parsed = new Date(deadline.date);
+    const hasTime = !Number.isNaN(parsed.getTime()) && !(
+        parsed.getUTCHours() === 0 &&
+        parsed.getUTCMinutes() === 0 &&
+        parsed.getUTCSeconds() === 0 &&
+        parsed.getUTCMilliseconds() === 0
+    );
+
+    return {
+        summary: `${deadline.label || 'Important date'}: ${deadline.text || decodeHtmlEntities(email.subject).slice(0, 60)}`,
+        description: [
+            `Email: ${decodeHtmlEntities(email.subject)}`,
+            `From: ${email.sender}`,
+            deadline.text ? `Extracted date text: ${deadline.text}` : null,
+            `Label: ${deadline.label || 'Important date'}`,
+            `Gmail link: https://mail.google.com/mail/u/0/#inbox/${email.googleMessageId}`,
+            '',
+            `Snippet: ${email.snippet || ''}`,
+        ].filter(Boolean).join('\n'),
+        date: deadline.date,
+        ...(hasTime ? { dateTime: deadline.date } : {}),
+    };
+}
+
 // ── Priority icon + colour config ─────────────────────────────────────────────
 function getPriorityConfig(urgency) {
     switch (urgency) {
@@ -137,6 +184,8 @@ const PillRibbon = ({
     activeTab,
     onCategoryChange,
     onToggleUseful,
+    onSummarize,
+    isSummarizing,
     onAddToCalendar,
 }) => {
     const [dropOpen, setDropOpen] = useState(false);
@@ -319,6 +368,28 @@ const PillRibbon = ({
                 )
             )}
 
+            <div
+                style={wrapperStyle}
+                onMouseEnter={() => setHovered('summarize')}
+                onMouseLeave={() => setHovered(null)}
+            >
+                <button
+                    style={actionStyle}
+                    onClick={onSummarize}
+                    disabled={isSummarizing}
+                    aria-label="Summarize email"
+                >
+                    <svg style={iconStyle} viewBox="0 0 24 24" fill="none"
+                        stroke="#0ea5e9" strokeWidth="1.7"
+                        strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 6h16M4 12h10M4 18h7" />
+                    </svg>
+                </button>
+                {hovered === 'summarize' && (
+                    <div style={tooltipStyle}>{isSummarizing ? 'Summarizing...' : 'Summarize email'}</div>
+                )}
+            </div>
+
             {/* Calendar */}
             {hasUpcomingDeadline && (
                 <div
@@ -372,6 +443,73 @@ const PillRibbon = ({
 };
 
 // ── Sandboxed iframe renderer for HTML email bodies ───────────────────────────
+const DateExtractionPanel = ({ deadlines, onAddToCalendar, addingDate }) => {
+    if (!deadlines.length) return null;
+
+    return (
+        <div className="date-panel">
+            <div className="date-panel-header">
+                <div>
+                    <h3 className="date-panel-title">Important dates found</h3>
+                    <p className="date-panel-subtitle">Review the extracted dates and add the ones you want to Google Calendar.</p>
+                </div>
+            </div>
+
+            <div className="date-panel-list">
+                {deadlines.map((deadline, index) => {
+                    const tag = deadlineTag(deadline.date);
+                    const isAdding = addingDate === deadline.date;
+
+                    return (
+                        <div key={`${deadline.date}-${index}`} className="date-panel-item">
+                            <div className="date-panel-copy">
+                                <span className={`date-panel-status date-panel-status-${tag.status}`}>
+                                    {deadline.label || 'Important date'}
+                                </span>
+                                <strong className="date-panel-when">{formatDateTimeDetailed(deadline.date)}</strong>
+                                <span className="date-panel-text">{deadline.text || 'Date extracted from the email content.'}</span>
+                            </div>
+                            <button
+                                type="button"
+                                className="date-panel-action"
+                                onClick={() => onAddToCalendar(deadline)}
+                                disabled={isAdding}
+                            >
+                                {isAdding ? 'Adding...' : 'Add to Calendar'}
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+const SummaryPanel = ({ summaryData, isSummarizing }) => {
+    if (!isSummarizing && !summaryData) return null;
+
+    return (
+        <div className="summary-panel">
+            <div className="summary-panel-header">
+                <h3 className="summary-panel-title">Quick summary</h3>
+                {summaryData?.tone && <span className="summary-tone">{summaryData.tone}</span>}
+            </div>
+
+            <p className="summary-panel-text">
+                {isSummarizing ? 'Generating a concise summary for this email...' : summaryData.summary}
+            </p>
+
+            {!isSummarizing && summaryData?.action_items?.length > 0 && (
+                <div className="summary-actions">
+                    {summaryData.action_items.map((item, index) => (
+                        <div key={`${item}-${index}`} className="summary-action-item">{item}</div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const EmailBodyRenderer = ({ html, plainText, theme }) => {
     const iframeRef = useRef(null);
     const [loaded, setLoaded] = useState(false);
@@ -502,9 +640,40 @@ const EmailModal = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [email?._id]);
 
+    const [addingDate, setAddingDate] = useState(null);
+    const [isSummarizing, setIsSummarizing] = useState(false);
+    const [summaryData, setSummaryData] = useState(null);
+
     if (!email) return null;
 
-    const handleAddToCalendar = async () => {
+    const extractedDates = deduplicateDeadlines(email.extractedDeadlines)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    const upcomingDeadlines = extractedDates
+        .filter(d => deadlineTag(d.date).status !== 'expired');
+
+    const handleSummarize = async () => {
+        if (isSummarizing) return;
+
+        setIsSummarizing(true);
+        try {
+            const res = await axios.get(`${API}/api/emails/${email._id}/summary`, { withCredentials: true });
+            if (res.data?.success) {
+                setSummaryData({
+                    summary: res.data.summary,
+                    action_items: res.data.action_items || [],
+                    tone: res.data.tone || 'Informational',
+                });
+            } else {
+                toast.error('Failed to summarize email.');
+            }
+        } catch {
+            toast.error('Could not summarize this email right now.');
+        } finally {
+            setIsSummarizing(false);
+        }
+    };
+
+    const unusedHandleAddToCalendar = async () => {
         if (!email.extractedDeadlines?.length) return;
         const now = new Date();
         const upcoming = email.extractedDeadlines
@@ -521,7 +690,7 @@ const EmailModal = ({
                 description: `Email Context: ${email.subject}\n\nFrom: ${email.sender}\n\nLink: https://mail.google.com/mail/u/0/#inbox/${email.googleMessageId}\n\nSnippet: ${email.snippet}`,
                 date: primaryDeadline.date,
             };
-            const res = await axios.post('http://localhost:5000/api/calendar/add-event', payload, { withCredentials: true });
+            const res = await axios.post(`${API}/api/calendar/add-event`, payload, { withCredentials: true });
             if (res.data.success) {
                 toast.success('Event added to Google Calendar!', { id: toastId });
             } else {
@@ -531,12 +700,36 @@ const EmailModal = ({
             toast.error('Calendar error. Please try again.', { id: toastId });
         }
     };
+    void unusedHandleAddToCalendar;
+
+    const handleAddToCalendar = async (deadline = upcomingDeadlines[0] || extractedDates[0]) => {
+        if (!deadline) return;
+
+        const toastId = toast.loading('Adding to Google Calendar...');
+        setAddingDate(deadline.date);
+        try {
+            const payload = buildCalendarPayload(email, deadline);
+            const res = await axios.post(`${API}/api/calendar/add-event`, payload, { withCredentials: true });
+            if (res.data.success) {
+                toast.success('Event added to Google Calendar!', { id: toastId });
+                if (res.data.event?.htmlLink) {
+                    window.open(res.data.event.htmlLink, '_blank', 'noopener,noreferrer');
+                }
+            } else {
+                toast.error('Failed to add event.', { id: toastId });
+            }
+        } catch {
+            toast.error('Calendar error. Please try again.', { id: toastId });
+        } finally {
+            setAddingDate(null);
+        }
+    };
 
     const handleCategoryChange = async (newCat) => {
         const toastId = toast.loading('Updating category…');
         try {
             const res = await axios.put(
-                `http://localhost:5000/api/emails/${email._id}/category`,
+                `${API}/api/emails/${email._id}/category`,
                 { category: newCat },
                 { withCredentials: true }
             );
@@ -547,8 +740,8 @@ const EmailModal = ({
         }
     };
 
-    const dedupedDeadlines = deduplicateDeadlines(email.extractedDeadlines);
-    const hasUpcomingDeadline = dedupedDeadlines.some(d => deadlineTag(d.date).status !== 'expired');
+    const dedupedDeadlines = extractedDates;
+    const hasUpcomingDeadline = upcomingDeadlines.length > 0;
 
     return (
         <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Email detail">
@@ -595,11 +788,21 @@ const EmailModal = ({
                     activeTab={activeTab}
                     onCategoryChange={handleCategoryChange}
                     onToggleUseful={onToggleUseful}
+                    onSummarize={handleSummarize}
+                    isSummarizing={isSummarizing}
                     onAddToCalendar={handleAddToCalendar}
                 />
 
                 {/* Body */}
                 <div className="modal-body">
+                    <SummaryPanel summaryData={summaryData} isSummarizing={isSummarizing} />
+
+                    <DateExtractionPanel
+                        deadlines={dedupedDeadlines}
+                        onAddToCalendar={handleAddToCalendar}
+                        addingDate={addingDate}
+                    />
+
                     {email.body ? (
                         <EmailBodyRenderer html={email.body} plainText={email.snippet} theme={theme} />
                     ) : (

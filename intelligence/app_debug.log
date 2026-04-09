@@ -15618,3 +15618,279 @@
 2026-04-07 19:39:27,299 INFO: 127.0.0.1 - - [07/Apr/2026 19:39:27] "POST /classify-batch HTTP/1.1" 200 -
 2026-04-07 19:40:06,040 INFO: 127.0.0.1 - - [07/Apr/2026 19:40:06] "POST /classify HTTP/1.1" 200 -
 2026-04-07 19:40:20,990 INFO: 127.0.0.1 - - [07/Apr/2026 19:40:20] "POST /classify HTTP/1.1" 200 -
+2026-04-07 23:15:11,926 INFO: Loading models...
+2026-04-07 23:15:12,431 INFO: Models loaded and ready.
+2026-04-07 23:15:12,433 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-07 23:15:12,445 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.47.0.184:5001
+2026-04-07 23:15:12,446 INFO: [33mPress CTRL+C to quit[0m
+2026-04-07 23:17:06,635 DEBUG: Looking up time zone info from registry
+2026-04-07 23:17:07,209 INFO: 127.0.0.1 - - [07/Apr/2026 23:17:07] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:17:39,245 INFO: 127.0.0.1 - - [07/Apr/2026 23:17:39] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:17:49,334 INFO: 127.0.0.1 - - [07/Apr/2026 23:17:49] "POST /classify HTTP/1.1" 200 -
+2026-04-07 23:18:03,884 INFO: 127.0.0.1 - - [07/Apr/2026 23:18:03] "POST /classify HTTP/1.1" 200 -
+2026-04-07 23:19:50,588 INFO: 127.0.0.1 - - [07/Apr/2026 23:19:50] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:20:21,976 INFO: 127.0.0.1 - - [07/Apr/2026 23:20:21] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:24:43,941 INFO: 127.0.0.1 - - [07/Apr/2026 23:24:43] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:31:48,204 INFO: 127.0.0.1 - - [07/Apr/2026 23:31:48] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:32:32,571 INFO: 127.0.0.1 - - [07/Apr/2026 23:32:32] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:39:49,896 INFO: 127.0.0.1 - - [07/Apr/2026 23:39:49] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:40:40,801 INFO: 127.0.0.1 - - [07/Apr/2026 23:40:40] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-07 23:41:25,228 INFO: 127.0.0.1 - - [07/Apr/2026 23:41:25] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 00:11:51,304 INFO: Loading models...
+2026-04-08 00:11:51,791 INFO: Models loaded and ready.
+2026-04-08 00:11:51,792 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-08 00:11:51,814 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.47.0.184:5001
+2026-04-08 00:11:51,841 INFO: [33mPress CTRL+C to quit[0m
+2026-04-08 00:14:47,643 DEBUG: Looking up time zone info from registry
+2026-04-08 00:15:28,112 INFO: 127.0.0.1 - - [08/Apr/2026 00:15:28] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 00:15:28,581 INFO: 127.0.0.1 - - [08/Apr/2026 00:15:28] "POST /classify HTTP/1.1" 200 -
+2026-04-08 00:15:43,395 INFO: 127.0.0.1 - - [08/Apr/2026 00:15:43] "POST /classify HTTP/1.1" 200 -
+2026-04-08 00:17:59,156 INFO: 127.0.0.1 - - [08/Apr/2026 00:17:59] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 00:18:29,750 INFO: 127.0.0.1 - - [08/Apr/2026 00:18:29] "POST /classify HTTP/1.1" 200 -
+2026-04-08 00:18:44,465 INFO: 127.0.0.1 - - [08/Apr/2026 00:18:44] "POST /classify HTTP/1.1" 200 -
+2026-04-08 00:20:56,612 INFO: 127.0.0.1 - - [08/Apr/2026 00:20:56] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 00:25:21,240 INFO: 127.0.0.1 - - [08/Apr/2026 00:25:21] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 00:26:03,426 INFO: 127.0.0.1 - - [08/Apr/2026 00:26:03] "POST /classify HTTP/1.1" 200 -
+2026-04-08 00:26:18,334 INFO: 127.0.0.1 - - [08/Apr/2026 00:26:18] "POST /classify HTTP/1.1" 200 -
+2026-04-08 17:06:42,827 INFO: Loading models...
+2026-04-08 17:06:43,353 INFO: Models loaded and ready.
+2026-04-08 17:06:43,355 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-08 17:06:43,371 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.47.0.184:5001
+2026-04-08 17:06:43,372 INFO: [33mPress CTRL+C to quit[0m
+2026-04-08 17:09:03,605 DEBUG: Looking up time zone info from registry
+2026-04-08 17:09:20,513 INFO: 127.0.0.1 - - [08/Apr/2026 17:09:20] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 17:09:23,159 INFO: 127.0.0.1 - - [08/Apr/2026 17:09:23] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 17:09:43,074 INFO: 127.0.0.1 - - [08/Apr/2026 17:09:43] "POST /classify HTTP/1.1" 200 -
+2026-04-08 17:09:54,196 INFO: 127.0.0.1 - - [08/Apr/2026 17:09:54] "POST /classify HTTP/1.1" 200 -
+2026-04-08 17:26:47,535 INFO: 127.0.0.1 - - [08/Apr/2026 17:26:47] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 17:27:29,769 INFO: 127.0.0.1 - - [08/Apr/2026 17:27:29] "POST /classify HTTP/1.1" 200 -
+2026-04-08 17:27:44,094 INFO: 127.0.0.1 - - [08/Apr/2026 17:27:44] "POST /classify HTTP/1.1" 200 -
+2026-04-08 17:28:37,498 INFO: 127.0.0.1 - - [08/Apr/2026 17:28:37] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 17:30:45,978 INFO: Loading models...
+2026-04-08 17:30:46,412 INFO: Models loaded and ready.
+2026-04-08 17:30:46,413 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-08 17:30:46,429 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.47.0.184:5001
+2026-04-08 17:30:46,429 INFO: [33mPress CTRL+C to quit[0m
+2026-04-08 17:32:24,995 DEBUG: Looking up time zone info from registry
+2026-04-08 17:32:32,388 INFO: 127.0.0.1 - - [08/Apr/2026 17:32:32] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 17:33:09,966 INFO: 127.0.0.1 - - [08/Apr/2026 17:33:09] "POST /classify HTTP/1.1" 200 -
+2026-04-08 17:33:25,140 INFO: 127.0.0.1 - - [08/Apr/2026 17:33:25] "POST /classify HTTP/1.1" 200 -
+2026-04-08 18:20:46,410 INFO: Loading models...
+2026-04-08 18:20:46,862 INFO: Models loaded and ready.
+2026-04-08 18:20:46,864 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-08 18:20:46,875 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.153.170.184:5001
+2026-04-08 18:20:46,876 INFO: [33mPress CTRL+C to quit[0m
+2026-04-08 18:21:51,812 DEBUG: Looking up time zone info from registry
+2026-04-08 18:21:52,164 INFO: 127.0.0.1 - - [08/Apr/2026 18:21:52] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 19:30:00,682 INFO: 127.0.0.1 - - [08/Apr/2026 19:30:00] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 19:37:56,338 INFO: 127.0.0.1 - - [08/Apr/2026 19:37:56] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 19:38:37,515 INFO: 127.0.0.1 - - [08/Apr/2026 19:38:37] "POST /classify HTTP/1.1" 200 -
+2026-04-08 19:38:52,392 INFO: 127.0.0.1 - - [08/Apr/2026 19:38:52] "POST /classify HTTP/1.1" 200 -
+2026-04-08 19:43:37,564 INFO: 127.0.0.1 - - [08/Apr/2026 19:43:37] "POST /classify HTTP/1.1" 200 -
+2026-04-08 19:43:54,079 INFO: 127.0.0.1 - - [08/Apr/2026 19:43:54] "POST /classify HTTP/1.1" 200 -
+2026-04-08 19:46:40,798 INFO: 127.0.0.1 - - [08/Apr/2026 19:46:40] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 20:11:23,138 INFO: 127.0.0.1 - - [08/Apr/2026 20:11:23] "POST /classify HTTP/1.1" 200 -
+2026-04-08 20:11:38,321 INFO: 127.0.0.1 - - [08/Apr/2026 20:11:38] "POST /classify HTTP/1.1" 200 -
+2026-04-08 20:14:28,711 INFO: 127.0.0.1 - - [08/Apr/2026 20:14:28] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 20:18:08,494 INFO: 127.0.0.1 - - [08/Apr/2026 20:18:08] "POST /classify HTTP/1.1" 200 -
+2026-04-08 20:18:24,318 INFO: 127.0.0.1 - - [08/Apr/2026 20:18:24] "POST /classify HTTP/1.1" 200 -
+2026-04-08 20:21:08,304 INFO: 127.0.0.1 - - [08/Apr/2026 20:21:08] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 21:03:58,040 INFO: 127.0.0.1 - - [08/Apr/2026 21:03:58] "POST /classify HTTP/1.1" 200 -
+2026-04-08 21:04:13,147 INFO: 127.0.0.1 - - [08/Apr/2026 21:04:13] "POST /classify HTTP/1.1" 200 -
+2026-04-08 21:07:08,059 INFO: 127.0.0.1 - - [08/Apr/2026 21:07:08] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 21:22:41,654 INFO: 127.0.0.1 - - [08/Apr/2026 21:22:41] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 21:23:20,917 INFO: 127.0.0.1 - - [08/Apr/2026 21:23:20] "POST /classify HTTP/1.1" 200 -
+2026-04-08 21:23:25,030 INFO: 127.0.0.1 - - [08/Apr/2026 21:23:25] "POST /classify HTTP/1.1" 200 -
+2026-04-08 21:24:26,448 INFO: Loading models...
+2026-04-08 21:24:26,884 INFO: Models loaded and ready.
+2026-04-08 21:24:26,886 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-08 21:24:26,898 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.153.170.184:5001
+2026-04-08 21:24:26,898 INFO: [33mPress CTRL+C to quit[0m
+2026-04-08 21:26:32,805 DEBUG: Looking up time zone info from registry
+2026-04-08 21:26:34,253 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:26:34,268 INFO: 127.0.0.1 - - [08/Apr/2026 21:26:34] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:26:34,286 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:26:34,302 INFO: 127.0.0.1 - - [08/Apr/2026 21:26:34] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:30:19,801 INFO: 127.0.0.1 - - [08/Apr/2026 21:30:19] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 21:34:53,311 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:34:53,313 INFO: 127.0.0.1 - - [08/Apr/2026 21:34:53] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:34:53,326 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:34:53,328 INFO: 127.0.0.1 - - [08/Apr/2026 21:34:53] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:36:58,472 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:36:58,475 INFO: 127.0.0.1 - - [08/Apr/2026 21:36:58] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:36:58,488 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:36:58,492 INFO: 127.0.0.1 - - [08/Apr/2026 21:36:58] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:38:35,190 INFO: 127.0.0.1 - - [08/Apr/2026 21:38:35] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 21:40:34,775 INFO: 127.0.0.1 - - [08/Apr/2026 21:40:34] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-08 21:44:35,832 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:44:35,834 INFO: 127.0.0.1 - - [08/Apr/2026 21:44:35] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:44:35,848 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-08 21:44:35,850 INFO: 127.0.0.1 - - [08/Apr/2026 21:44:35] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-08 21:48:19,713 INFO: 127.0.0.1 - - [08/Apr/2026 21:48:19] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-09 00:08:25,734 INFO: Loading models...
+2026-04-09 00:08:26,268 INFO: Models loaded and ready.
+2026-04-09 00:08:26,269 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-09 00:08:26,289 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.153.170.184:5001
+2026-04-09 00:08:26,289 INFO: [33mPress CTRL+C to quit[0m
+2026-04-09 00:16:01,920 DEBUG: Looking up time zone info from registry
+2026-04-09 00:16:03,563 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-09 00:16:03,565 INFO: 127.0.0.1 - - [09/Apr/2026 00:16:03] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-09 00:16:03,581 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-09 00:16:03,590 INFO: 127.0.0.1 - - [09/Apr/2026 00:16:03] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-09 00:16:08,383 INFO: 127.0.0.1 - - [09/Apr/2026 00:16:08] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-09 01:18:15,529 INFO: 127.0.0.1 - - [09/Apr/2026 01:18:15] "[33mPOST /summarize HTTP/1.1[0m" 404 -
+2026-04-09 01:22:31,790 INFO: 127.0.0.1 - - [09/Apr/2026 01:22:31] "[33mPOST /summarize HTTP/1.1[0m" 404 -
+2026-04-09 01:24:04,365 INFO: Loading models...
+2026-04-09 01:24:04,897 INFO: Models loaded and ready.
+2026-04-09 01:24:04,899 INFO: Starting CASEO Intelligence Layer on port 5001
+2026-04-09 01:24:04,916 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.153.170.184:5001
+2026-04-09 01:24:04,916 INFO: [33mPress CTRL+C to quit[0m
+2026-04-09 01:25:49,986 INFO: 127.0.0.1 - - [09/Apr/2026 01:25:49] "POST /summarize HTTP/1.1" 200 -
+2026-04-09 01:25:59,184 DEBUG: Looking up time zone info from registry
+2026-04-09 01:26:00,838 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-09 01:26:00,854 INFO: 127.0.0.1 - - [09/Apr/2026 01:26:00] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-09 01:27:20,107 INFO: 127.0.0.1 - - [09/Apr/2026 01:27:20] "POST /summarize HTTP/1.1" 200 -
+2026-04-09 01:29:50,747 INFO: 127.0.0.1 - - [09/Apr/2026 01:29:50] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-09 01:39:26,220 INFO: 127.0.0.1 - - [09/Apr/2026 01:39:26] "POST /summarize HTTP/1.1" 200 -
+2026-04-09 01:39:35,385 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-09 01:39:35,390 INFO: 127.0.0.1 - - [09/Apr/2026 01:39:35] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-09 01:43:21,467 INFO: 127.0.0.1 - - [09/Apr/2026 01:43:21] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-09 01:49:47,690 INFO: 127.0.0.1 - - [09/Apr/2026 01:49:47] "POST /summarize HTTP/1.1" 200 -
+2026-04-09 01:49:54,495 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-09 01:49:54,509 INFO: 127.0.0.1 - - [09/Apr/2026 01:49:54] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-09 01:53:36,906 INFO: 127.0.0.1 - - [09/Apr/2026 01:53:36] "POST /classify-batch HTTP/1.1" 200 -
+2026-04-09 01:58:27,306 INFO: 127.0.0.1 - - [09/Apr/2026 01:58:27] "POST /summarize HTTP/1.1" 200 -
+2026-04-09 01:58:53,039 INFO: 127.0.0.1 - - [09/Apr/2026 01:58:53] "POST /summarize HTTP/1.1" 200 -
+2026-04-09 02:02:09,514 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-09 02:02:09,521 INFO: 127.0.0.1 - - [09/Apr/2026 02:02:09] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -
+2026-04-09 02:02:09,553 ERROR: Error in /classify endpoint: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+Traceback (most recent call last):
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\app.py", line 82, in classify
+    cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+  File "F:\Mp-dummy\CASEO_PAL\intelligence\classifier.py", line 216, in classify
+    "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid format specifier ' "YYYY-MM-DD", "description": "<text>"' for object of type 'str'
+2026-04-09 02:02:09,556 INFO: 127.0.0.1 - - [09/Apr/2026 02:02:09] "[35m[1mPOST /classify HTTP/1.1[0m" 500 -

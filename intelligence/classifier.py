@@ -10,7 +10,7 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 CONFIDENCE_THRESHOLD = 0.50
 
-DEFAULT_CATEGORIES = ["Academic", "Internship", "Job", "Event", "Personal"]
+DEFAULT_CATEGORIES = ["Academic", "Internship", "Job", "Event", "Finance", "Newsletter", "Personal"]
 
 # ── Tier 1: Keyword rules (ordered by priority, higher score = stronger signal) ──
 # Each rule: (category, score, [keywords_lower])
@@ -100,9 +100,9 @@ KEYWORD_RULES = [
 
 # Senders that strongly imply a category
 SENDER_RULES = [
-    ("Job",        0.88, ["superset", "joinsuperset", "instahyre", "naukri", "linkedin", "foundit", "hirist"]),
+    ("Job",        0.93, ["superset", "joinsuperset", "instahyre", "naukri", "linkedin", "foundit", "hirist", "glassdoor", "indeed", "wellfound", "cutshort"]),
     ("Academic",   0.85, ["nptel", "swayam", "coursera", "udemy", "edx"]),
-    ("Event",      0.80, ["eventbrite", "meetup.com", "townscript", "unstop"]),
+    ("Event",      0.84, ["eventbrite", "meetup.com", "townscript", "unstop", "devfolio", "hackerearth"]),
     ("Finance",    0.90, ["noreply@hdfcbank", "alerts@axisbank", "noreply@icicibank",
                           "sbi.", "kotak", "paytm", "razorpay", "stripe", "paypal"]),
     ("Newsletter", 0.82, ["substack", "mailchimp", "sendgrid", "campaigns.medi"]),
@@ -156,6 +156,34 @@ class EmailClassifier:
         self.gemini = genai.GenerativeModel("gemini-1.5-flash-latest") # Auto-updates to the latest flash version
         print("[Classifier] Ready - Tier 1 keywords + Tier 2 Gemini Flash (Latest).")
 
+    def _resolve_label_choice(self, raw_category, labels, fallback_category):
+        if not raw_category:
+            return fallback_category or labels[0]
+
+        normalized = raw_category.strip()
+        exact_match = next((label for label in labels if label.lower() == normalized.lower()), None)
+        if exact_match:
+            return exact_match
+
+        if fallback_category:
+            return fallback_category
+
+        return normalized
+
+    def _apply_fallback_guardrails(self, category, confidence, fallback_category, fallback_score, labels):
+        guarded_category = category
+        guarded_confidence = confidence
+
+        if fallback_category and fallback_category != "Personal":
+            if category in ["Personal", "Unknown"] and fallback_score >= 0.8:
+                guarded_category = fallback_category
+                guarded_confidence = max(confidence, fallback_score)
+            elif guarded_category not in labels and fallback_score >= 0.85:
+                guarded_category = fallback_category
+                guarded_confidence = max(confidence, fallback_score)
+
+        return guarded_category, guarded_confidence
+
     def classify(self, text, user_categories=None, sender=""):
         if text and len(text) > 2000:
             text = text[:2000]
@@ -175,6 +203,7 @@ class EmailClassifier:
 Existing categories: [{existing_str}]
 
 Email content:
+Sender: "{sender}"
 {hint_str}
 \"\"\"{text}\"\"\"
 
@@ -183,25 +212,28 @@ Analyze the complete proper intention of the email and respond with ONLY raw JSO
   "category": "<name>", 
   "is_new": true/false, 
   "confidence": 0.0-1.0, 
-  "urgency": "Critical" | "High" | "Medium" | "Low"
+  "urgency": "Critical" | "High" | "Medium" | "Low",
+  "deadlines": [{"date": "YYYY-MM-DD", "description": "<text>"}]
 }}
 
 Urgency Rules (CRITICAL to understand true intention):
-- "Critical": Immediate action required today or extremely impactful (e.g., job offer, final interview, account block, urgent deadline today).
-- "High": Important with a near deadline, or highly relevant opportunities (e.g., meeting invite, new assignment, interview shortlisting, high-value opportunity).
+- "Critical": Immediate action required today or extremely impactful (e.g., job offer, final interview, account block, urgent deadline today, OTP, security alert).
+- "High": Important with a near deadline, or highly relevant opportunities (e.g., meeting invite, new assignment, interview shortlisting, assessment link, high-value opportunity, bill due).
 - "Medium": Standard informative mail (e.g., general updates, bank statements, receipts).
 - "Low": General promotions, generic newsletters, spam, or non-urgent mail.
 
 Rules:
 1. Always pick the best category based on the actual intention of the email.
-2. Carefully evaluate the true intention for urgency. If it's a personal opportunity or important update, rank it High or Critical.
-3. Only set "is_new": true if it genuinely doesn't fit existing categories."""
+2. Carefully evaluate the true intention for urgency. OTPs, Security Alerts, Job Shortlists/Interviews, and Assessments MUST be High or Critical.
+3. If the email contains any actual dates or deadlines for action/events, explicitly extract them into the "deadlines" array.
+4. Only set "is_new": true if it genuinely doesn't fit existing categories."""
 
         try:
             raw_text = _call_gemini_with_retry(self.gemini, prompt)
             raw = re.sub(r"^```json\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE).strip()
             parsed = json.loads(raw)
-            category = parsed.get("category", labels[0])
+            raw_category = parsed.get("category", labels[0])
+            category = self._resolve_label_choice(raw_category, labels, cat)
             is_new = parsed.get("is_new", False)
             confidence = float(parsed.get("confidence", 0.9))
             urgency = parsed.get("urgency", "Low")
@@ -210,14 +242,25 @@ Rules:
                 urgency = "Low"
             if category in labels:
                 is_new = False
+            if cat and score >= 0.9 and confidence < 0.7:
+                category = cat
+                confidence = max(confidence, score)
+                is_new = False
+            category, confidence = self._apply_fallback_guardrails(category, confidence, cat, score, labels)
 
-            return {"category": category, "confidence": confidence, "is_new_category": is_new, "urgency": urgency}
+            return {
+                "category": category, 
+                "confidence": confidence, 
+                "is_new_category": is_new, 
+                "urgency": urgency,
+                "deadlines": parsed.get("deadlines", [])
+            }
 
         except Exception as e:
             print(f"[Classifier] Gemini fallback to keyword due to error: {e}")
             if cat:
-                return {"category": cat, "confidence": 0.5, "is_new_category": False, "urgency": "Low"}
-            return {"category": "Personal", "confidence": 0.4, "is_new_category": False, "urgency": "Low"}
+                return {"category": cat, "confidence": 0.5, "is_new_category": False, "urgency": "Low", "deadlines": []}
+            return {"category": "Personal", "confidence": 0.4, "is_new_category": False, "urgency": "Low", "deadlines": []}
 
     def classify_batch(self, emails, labels):
         if not emails: return {}
@@ -229,7 +272,7 @@ Rules:
             sender_lower = e.get("sender", "").lower()
             cat, score = keyword_classify(text_lower, sender_lower, labels)
             hint_str = f"[System Hint: '{cat}'] " if cat else ""
-            email_blocks.append(f'{e["id"]}. {hint_str}"""{e["text"][:600]}"""')
+            email_blocks.append(f'{e["id"]}. Sender: "{e.get("sender", "")}" {hint_str}"""{e["text"][:900]}"""')
 
         email_block = "\n".join(email_blocks)
 
@@ -246,8 +289,8 @@ Respond ONLY with raw JSON mapping the ID to the result:
 }}
 
 Urgency Rules (CRITICAL to understand true intention):
-- "Critical": Urgent action needed today, immense impact (e.g., job offer, imminent deadline).
-- "High": Important opportunity or near deadline (e.g., interview shortlisting, assignment, important events).
+- "Critical": Urgent action needed today, immense impact (e.g., job offer, imminent deadline, OTP, security alert).
+- "High": Important opportunity or near deadline (e.g., interview shortlisting, assessment test, important events, bill due).
 - "Medium": Normal informative mail (e.g., updates, transaction alerts).
 - "Low": Promotion, newsletter, non-urgent."""
 
@@ -260,15 +303,88 @@ Urgency Rules (CRITICAL to understand true intention):
             for e in emails:
                 key = str(e["id"])
                 cls = parsed.get(key, {})
-                category = cls.get("category", labels[0] if labels else "Personal")
+                text_lower = e.get("text", "").lower()
+                sender_lower = e.get("sender", "").lower()
+                fallback_category, fallback_score = keyword_classify(text_lower, sender_lower, labels)
+                category = self._resolve_label_choice(cls.get("category", labels[0] if labels else "Personal"), labels, fallback_category)
                 urgency = cls.get("urgency", "Low")
+                confidence = float(cls.get("confidence", max(0.85, fallback_score if fallback_category else 0.5)))
+                if fallback_category and fallback_score >= 0.9 and confidence < 0.7:
+                    category = fallback_category
+                    confidence = max(confidence, fallback_score)
+                category, confidence = self._apply_fallback_guardrails(
+                    category,
+                    confidence,
+                    fallback_category,
+                    fallback_score,
+                    labels,
+                )
                 results[e["id"]] = {
                     "category": category,
-                    "confidence": float(cls.get("confidence", 0.85)),
-                    "is_new_category": cls.get("is_new", False),
-                    "urgency": urgency if urgency in ["Critical", "High", "Medium", "Low"] else "Low"
+                    "confidence": confidence,
+                    "is_new_category": cls.get("is_new", False) if category not in labels else False,
+                    "urgency": urgency if urgency in ["Critical", "High", "Medium", "Low"] else "Low",
+                    "deadlines": cls.get("deadlines", [])
                 }
             return results
         except Exception as e:
             print(f"[Classifier] Batch failed: {e}")
-            return {e["id"]: {"category": "Personal", "confidence": 0.5, "is_new_category": False, "urgency": "Low"} for e in emails}
+            results = {}
+            for email in emails:
+                text_lower = email.get("text", "").lower()
+                sender_lower = email.get("sender", "").lower()
+                fallback_category, fallback_score = keyword_classify(text_lower, sender_lower, labels)
+                results[email["id"]] = {
+                    "category": fallback_category or "Personal",
+                    "confidence": fallback_score if fallback_category else 0.5,
+                    "is_new_category": False,
+                    "urgency": "Low",
+                    "deadlines": []
+                }
+            return results
+
+    def summarize_email(self, text, sender="", subject=""):
+        if text and len(text) > 6000:
+            text = text[:6000]
+
+        prompt = f"""You are an email summarization assistant.
+
+Summarize the following email for a busy user.
+
+Email subject: "{subject}"
+Sender: "{sender}"
+
+Email content:
+\"\"\"{text}\"\"\"
+
+Return ONLY raw JSON in this format:
+{{
+  "summary": "<3-4 sentence professional and descriptive summary>",
+  "action_items": ["<short action item>", "<short action item>"],
+  "tone": "<Urgent|Informational|Promotional|Personal|Action Required>"
+}}
+
+Rules:
+1. Provide a comprehensive summary in exactly 3 to 4 professional sentences.
+2. Mention any deadlines, meetings, requests, approvals, payments, or next steps if present.
+3. If there are no action items, return an empty array.
+4. Do not use markdown."""
+
+        try:
+            raw_text = _call_gemini_with_retry(self.gemini, prompt)
+            raw = re.sub(r"^```json\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE).strip()
+            parsed = json.loads(raw)
+            return {
+                "summary": (parsed.get("summary") or "No summary available.").strip(),
+                "action_items": parsed.get("action_items", [])[:5],
+                "tone": parsed.get("tone", "Informational")
+            }
+        except Exception as e:
+            print(f"[Classifier] Summarization fallback due to error: {e}")
+            trimmed = " ".join((text or "").split())
+            fallback_summary = trimmed[:260] + ("..." if len(trimmed) > 260 else "")
+            return {
+                "summary": fallback_summary or "No summary available.",
+                "action_items": [],
+                "tone": "Informational"
+            }

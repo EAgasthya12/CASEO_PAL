@@ -41,6 +41,48 @@ const logError = (message, data) => {
 // ── Default fallback when Python is unavailable ───────────────────────────────
 const FALLBACK = { category: 'Personal', confidence: 0.4, deadlines: [], urgency: 'Low' };
 
+const htmlToPlainText = (text = '') =>
+    text
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const buildSummaryFallback = (text = '', sender = '', subject = '') => {
+    const clean = htmlToPlainText(text);
+    const compact = clean.replace(/\s+/g, ' ').trim();
+    const source = compact || subject || 'This email could not be summarized by AI right now.';
+
+    const summary = subject
+        ? `Subject: ${subject}. ${source.slice(0, 240)}${source.length > 240 ? '...' : ''}`
+        : `${source.slice(0, 280)}${source.length > 280 ? '...' : ''}`;
+
+    const actionItems = [];
+    const lowered = compact.toLowerCase();
+
+    if (/\b(reply|respond|revert)\b/.test(lowered)) actionItems.push('Reply to this email.');
+    if (/\b(pay|payment|invoice|bill|due amount)\b/.test(lowered)) actionItems.push('Review any payment or billing request.');
+    if (/\b(meeting|interview|call|session|webinar)\b/.test(lowered)) actionItems.push('Check whether you need to attend or schedule the event.');
+    if (/\b(submit|upload|apply|register|complete)\b/.test(lowered)) actionItems.push('Review the requested next step and complete it if needed.');
+
+    const tone = /\burgent|immediate|asap|deadline|due\b/.test(lowered)
+        ? 'Action Required'
+        : /\boffer|discount|sale|unsubscribe\b/.test(lowered)
+            ? 'Promotional'
+            : 'Informational';
+
+    return {
+        summary,
+        action_items: actionItems.slice(0, 3),
+        tone,
+    };
+};
+
 /**
  * Sends a single email to the Python service for classification + extraction.
  */
@@ -112,4 +154,30 @@ const analyzeBatch = async (emails, userCategories = []) => {
     }
 };
 
-module.exports = { analyzeText, analyzeBatch };
+const summarizeText = async (text, sender = '', subject = '') => {
+    if (isCircuitOpen()) {
+        console.warn('[PythonBridge] Circuit open — using summary fallback.');
+        return buildSummaryFallback(text, sender, subject);
+    }
+
+    try {
+        const response = await axios.post(
+            `${PYTHON_API_URL}/summarize`,
+            { text, sender, subject },
+            { timeout: REQUEST_TIMEOUT_MS }
+        );
+        recordSuccess();
+        return response.data;
+    } catch (error) {
+        recordFailure();
+        logError('summarizeText failed', {
+            message: error.message,
+            url: `${PYTHON_API_URL}/summarize`,
+            textSnippet: text ? text.substring(0, 100) : 'N/A',
+            response: error.response ? error.response.data : 'No response',
+        });
+        return buildSummaryFallback(text, sender, subject);
+    }
+};
+
+module.exports = { analyzeText, analyzeBatch, summarizeText };

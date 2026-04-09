@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
     photo: { type: String },
     categories: {
         type: [String],
-        default: ['Academic', 'Internship', 'Job', 'Event', 'Personal']
+        default: ['Academic', 'Internship', 'Job', 'Event', 'Finance', 'Newsletter', 'Personal']
     },
     ignoredSenders: { type: [String], default: [] },
     createdAt: { type: Date, default: Date.now },

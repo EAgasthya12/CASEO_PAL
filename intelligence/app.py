@@ -45,7 +45,7 @@ def add_cors(response):
     return response
 
 from classifier import EmailClassifier
-from extractor import DateExtractor
+from extractor_strict import DateExtractor
 
 logging.info("Loading models...")
 classifier = EmailClassifier()
@@ -117,7 +117,7 @@ def classify_batch():
         if not emails:
             return jsonify({"error": "No emails provided"}), 400
 
-        labels = user_categories if user_categories else ["Academic", "Internship", "Job", "Event", "Personal"]
+        labels = user_categories if user_categories else ["Academic", "Internship", "Job", "Event", "Finance", "Newsletter", "Personal"]
 
         all_results = {}
         batch_size = 10  # Gemini can comfortably handle 10 emails per call
@@ -149,6 +149,27 @@ def classify_batch():
 
     except Exception as e:
         logging.error(f"Error in /classify-batch endpoint: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/summarize', methods=['POST'])
+def summarize():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+
+        text = data.get('text', '')
+        sender = data.get('sender', '')
+        subject = data.get('subject', '')
+
+        if not text:
+            return jsonify({"error": "No text provided"}), 400
+
+        result = classifier.summarize_email(text, sender=sender, subject=subject)
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error in /summarize endpoint: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 

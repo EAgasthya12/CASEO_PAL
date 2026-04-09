@@ -1,10 +1,31 @@
 const { fetchAndProcessEmails, fetchMailboxEmails, getLabelMessageCounts } = require('../services/gmailService');
+const { summarizeText } = require('../services/pythonBridge');
 const Email = require('../models/Email');
 const User = require('../models/User');
 
 // ── In-memory scan status (per userId) ───────────────────────────────────────
 // Note: this resets on server restart — acceptable for a dev/student project.
 const scanStatus = {};
+
+const stripHtml = (text = '') =>
+    text
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const buildPriorityFilter = () => ({
+    $or: [
+        { isPriority: true },
+        { urgency: { $in: ['Critical', 'High'] } },
+        { 'extractedDeadlines.date': { $gt: new Date() } },
+    ],
+});
 
 // ── Sync / progressive scan ───────────────────────────────────────────────────
 exports.syncEmails = async (req, res) => {
@@ -35,16 +56,19 @@ exports.getEmails = async (req, res) => {
         }
 
         if (tab === 'priority') {
-            const now = new Date();
-            query.$or = [
-                { urgency: { $in: ['Critical', 'High'] } },
-                { 'extractedDeadlines.date': { $gt: now } }
-            ];
+            query = {
+                ...query,
+                ...buildPriorityFilter(),
+            };
         }
+
+        const sort = tab === 'priority'
+            ? { priorityScore: -1, date: -1 }
+            : { date: -1 };
 
         const [emails, total] = await Promise.all([
             Email.find(query)
-                .sort({ date: -1 })
+                .sort(sort)
                 .skip(skip)
                 .limit(limit)
                 .lean(),
@@ -201,6 +225,24 @@ exports.getScanStatus = (req, res) => {
     res.json(status);
 };
 
+exports.getPriorityPreview = async (req, res) => {
+    try {
+        const emails = await Email.find({
+            userId: req.user._id,
+            isUseful: { $ne: false },
+            ...buildPriorityFilter(),
+        })
+            .sort({ priorityScore: -1, date: -1 })
+            .limit(8)
+            .lean();
+
+        res.json({ emails });
+    } catch (error) {
+        console.error('[EmailController] getPriorityPreview error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch priority preview' });
+    }
+};
+
 // ── Force reclassify (background) ────────────────────────────────────────────
 exports.forceReclassify = async (req, res) => {
     const userId = req.user._id.toString();
@@ -256,5 +298,37 @@ exports.searchEmails = async (req, res) => {
     } catch (error) {
         console.error('[EmailController] searchEmails error:', error.message);
         res.status(500).json({ error: 'Search failed' });
+    }
+};
+
+exports.summarizeEmail = async (req, res) => {
+    try {
+        const email = await Email.findOne({ _id: req.params.id, userId: req.user._id });
+        if (!email) return res.status(404).json({ error: 'Email not found' });
+
+        // If we already have a generated summary, return it immediately
+        if (email.summaryData && email.summaryData.summary) {
+            return res.json({ success: true, ...email.summaryData });
+        }
+
+        const summarySource = [email.subject, email.snippet, stripHtml(email.body || '')]
+            .filter(Boolean)
+            .join('\n\n')
+            .trim();
+
+        if (!summarySource) {
+            return res.status(400).json({ error: 'Email has no content to summarize' });
+        }
+
+        const result = await summarizeText(summarySource, email.sender || '', email.subject || '');
+        
+        // Save the generated summary back to the database for future use
+        email.summaryData = result;
+        await email.save();
+
+        res.json({ success: true, ...result });
+    } catch (error) {
+        console.error('[EmailController] summarizeEmail error:', error.message);
+        res.status(500).json({ error: 'Failed to summarize email' });
     }
 };

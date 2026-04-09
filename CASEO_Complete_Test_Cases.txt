@@ -1,0 +1,63 @@
+CASEO: EMAIL INTELLIGENCE PLATFORM - COMPREHENSIVE TEST CASE DOCUMENT
+========================================================================
+
+PROJECT: CASEO (Email Prioritization & Summarization)
+DOCUMENT TYPE: Functional & Acceptance Test Suite
+FORMAT: Plain Text Table (Compatible with Word/Notepad/Excel)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+| ID      | TEST COMPONENT       | TEST SCENARIO                               | EXPECTED RESULT                                              | STATUS |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [SEC-01] | Authentication       | Google OAuth Login Flow                     | User redirected to Google; successfully logs into Dashboard  | PASS   |
+| [SEC-02] | Authentication       | Unauthorized Page Access                    | Unauthenticated user redirected to Login page                | PASS   |
+| [SEC-03] | Authentication       | Secure Logout                               | Session cleared; prevents back-button access to Dashboard    | PASS   |
+| [SEC-04] | Authentication       | Token Expiration Handling                   | App prompts for re-login if Gmail access token expires       | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [SYNC-01]| Gmail Integration     | Initial Full Sync                           | System fetches ~250 emails on first login                   | PASS   |
+| [SYNC-02]| Gmail Integration     | Progressive Loading (Background)            | First 50 emails load instantly; rest load in background      | PASS   |
+| [SYNC-03]| Gmail Integration     | Handling Zero Emails                        | UI displays "In-box is empty" gracefully                     | PASS   |
+| [SYNC-04]| Gmail Integration     | Fetching Sent/Spam Mailbox                  | Correct labels (SENT/SPAM) retrieved from Gmail API          | PASS   |
+| [SYNC-05]| Gmail Integration     | Mailbox Count Calculation                   | Sidebar shows correct unread/priority counts                 | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [AI-01]  | Classification       | Academic Email Detection                    | "Assignment Due" emails categorized as "Academic"           | PASS   |
+| [AI-02]  | Classification       | Job/Career Detection                        | "Offer Letter" or "Shortlisted" categorized as "Job"         | PASS   |
+| [AI-03]  | Classification       | Financial Email Detection                   | "Bank Statement" or "Payment Failed" categorized as "Finance"| PASS   |
+| [AI-04]  | Classification       | Internship Role Detection                   | "Internship Opportunity" emails categorized correctly        | PASS   |
+| [AI-05]  | Classification       | Promotion/Newsletter Detection               | Marketing/Digest emails categorized as "Newsletter"          | PASS   |
+| [AI-06]  | Classification       | Low Confidence Fallback                     | AI uses Keyword rules if Gemini confidence is < 0.5          | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [PRI-01] | Priority Logic       | Critical Urgency (OTP/Security)             | OTP or Security Alert marked as "Critical"                   | PASS   |
+| [PRI-02] | Priority Logic       | High Urgency (Immediate Deadlines)          | Emails with dates < 24h away marked as "High"                | PASS   |
+| [PRI-03] | Priority Logic       | Medium Urgency (Informational)              | General updates or receipts marked as "Medium"               | PASS   |
+| [PRI-04] | Priority Logic       | Low Urgency (Generic)                       | Newsletters and spam marked as "Low"                         | PASS   |
+| [PRI-05] | Priority Logic       | Priority Tab Filtering                      | Only "High/Critical" emails appear in Priority view          | PASS   |
+| [PRI-06] | Priority Logic       | Priority Score Calculation                  | Score (0-100) calculated based on keywords + urgency         | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [DATA-01]| Deadline Extraction   | Specific Date Format (YYYY-MM-DD)           | "Submit by 2024-12-25" results in accurate date object       | PASS   |
+| [DATA-02]| Deadline Extraction   | Relative Date Format ("Tomorrow")           | AI translates "due tomorrow" into correct relative date       | PASS   |
+| [DATA-03]| Deadline Extraction   | Multi-Deadline Extraction                   | Multiple dates in one email extracted into a list            | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [SUM-01] | Summarization        | Action Item Extraction                      | Extracts clear tasks like "Submit docs" or "Join meeting"    | PASS   |
+| [SUM-02] | Summarization        | Professional Tone Detection                 | Identifies "Urgent", "Informational", or "Personal" tone     | PASS   |
+| [SUM-03] | Summarization        | Length Constraint                           | Summary generated is between 3 to 4 concise sentences        | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [UI-01]  | User Experience       | Manual Category Change                      | Dropdown update successfully changes email's category        | PASS   |
+| [UI-02]  | User Experience       | Ignore Sender Feature                       | Sender blocked; existing emails moved to "Not Useful"        | PASS   |
+| [UI-03]  | User Experience       | Search Bar (Keyword)                        | Correct threads returned for subject/body searches           | PASS   |
+| [UI-04]  | User Experience       | Advanced Search (from: prefix)              | Filtering by specific sender works seamlessly                | PASS   |
+| [UI-05]  | User Experience       | Scan Progress Bar                           | Real-time progress bar updates during classification         | PASS   |
+| [UI-06]  | User Experience       | Infinite Scroll / Loading More              | Clicking "Load More" fetches next page of results            | PASS   |
+| [UI-07]  | User Experience       | Mobile Responsive Layout                    | UI adjusts to mobile viewports without breaking elements      | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [ERR-01] | Error Handling        | Gemini API Offline                          | System falls back to local Python Keyword rules              | PASS   |
+| [ERR-02] | Error Handling        | Large Payload (10k+ chars)                  | Large HTML emails truncated to 2000 chars gracefully         | PASS   |
+| [ERR-03] | Error Handling        | Database Connection Failure                 | App shows "Server Connection Lost" toast notification        | PASS   |
+| [ERR-04] | Error Handling        | Invalid Search Query                        | System returns "No results found" rather than crashing       | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [CONF-01]| Configuration        | Custom User Category Add                    | User can add "Personal-Work" category via settings           | PASS   |
+| [CONF-02]| Configuration        | Duplicate Category Guard                    | Prevents adding the same category name twice                 | PASS   |
+|---------|-----------------------|---------------------------------------------|--------------------------------------------------------------|--------|
+| [PERF-01]| Performance          | Batch Classification Speed                  | Processes batch of 50 emails in under 10 seconds             | PASS   |
+| [PERF-02]| Performance          | Memory Usage (Long Running)                 | Server stabilizes memory even after processing 1000+ emails   | PASS   |
+| [PERF-03]| Performance          | Database Index Search Speed                 | Full-text search returns results in < 500ms                  | PASS   |
+--------------------------------------------------------------------------------------------------------------------------------------------------------

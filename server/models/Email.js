@@ -14,6 +14,8 @@ const EmailSchema = new mongoose.Schema(
         category: { type: String, default: 'Unknown' },
         confidence: { type: Number },
         urgency: { type: String, enum: ['Critical', 'High', 'Medium', 'Low'], default: 'Low' },
+        isPriority: { type: Boolean, default: false },
+        priorityScore: { type: Number, default: 0 },
         extractedDeadlines: [{
             text: String,
             date: Date,
@@ -25,6 +27,13 @@ const EmailSchema = new mongoose.Schema(
         isUseful: { type: Boolean, default: true },
         
         isProcessed: { type: Boolean, default: false },
+
+        // Summary Data
+        summaryData: {
+            summary: { type: String },
+            action_items: [{ type: String }],
+            tone: { type: String }
+        }
     },
     {
         timestamps: true,  // adds createdAt + updatedAt automatically
@@ -41,6 +50,9 @@ EmailSchema.index({ userId: 1, isUseful: 1, category: 1 });
 
 // Fast unread count queries
 EmailSchema.index({ userId: 1, isUseful: 1, isRead: 1 });
+
+// Fast priority view queries
+EmailSchema.index({ userId: 1, isUseful: 1, isPriority: 1, priorityScore: -1, date: -1 });
 
 // Full-text search across subject, snippet, sender, body
 EmailSchema.index(
