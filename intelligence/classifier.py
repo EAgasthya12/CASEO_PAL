@@ -109,6 +109,53 @@ SENDER_RULES = [
 ]
 
 
+def normalize_sender_key(sender):
+    if not sender:
+        return ""
+    match = re.search(r"<([^>]+)>", sender)
+    value = match.group(1) if match else sender
+    return value.strip().lower()
+
+
+def extract_sender_domain(sender):
+    sender_key = normalize_sender_key(sender)
+    if "@" not in sender_key:
+        return ""
+    return sender_key.split("@", 1)[1]
+
+
+def apply_learning_rules(sender, labels, learning_profile=None):
+    if not learning_profile:
+        return None, 0.0
+
+    sender_key = normalize_sender_key(sender)
+    sender_domain = extract_sender_domain(sender)
+    best_category = None
+    best_score = 0.0
+
+    for rule in learning_profile.get("sender_rules", []):
+        category = (rule.get("category") or "").strip()
+        if category not in labels:
+            continue
+
+        strength = min(float(rule.get("strength", 1) or 1), 10.0)
+        sender_match = (rule.get("sender_key") or "").strip().lower()
+        domain_match = (rule.get("sender_domain") or "").strip().lower()
+
+        if sender_match and sender_match == sender_key:
+            score = min(0.9 + strength * 0.01, 0.99)
+            if score > best_score:
+                best_category = category
+                best_score = score
+        elif domain_match and domain_match == sender_domain:
+            score = min(0.82 + strength * 0.01, 0.93)
+            if score > best_score:
+                best_category = category
+                best_score = score
+
+    return best_category, best_score
+
+
 def keyword_classify(text_lower, sender_lower, labels):
     best_cat = None
     best_score = 0.0
@@ -184,7 +231,7 @@ class EmailClassifier:
 
         return guarded_category, guarded_confidence
 
-    def classify(self, text, user_categories=None, sender=""):
+    def classify(self, text, user_categories=None, sender="", learning_profile=None):
         if text and len(text) > 2000:
             text = text[:2000]
 
@@ -192,11 +239,15 @@ class EmailClassifier:
         text_lower = text.lower()
         sender_lower = sender.lower() if sender else ""
 
+        learned_cat, learned_score = apply_learning_rules(sender, labels, learning_profile)
         cat, score = keyword_classify(text_lower, sender_lower, labels)
+        if learned_cat and learned_score >= score:
+            cat, score = learned_cat, learned_score
         # We no longer return early here. We want Gemini to evaluate the "proper intention" 
         # and give us an accurate "urgency" score. Keyword match is kept as fallback.
 
         existing_str = ", ".join(f'"{c}"' for c in labels)
+        learning_hint = f" [User correction history suggests: '{learned_cat}']" if learned_cat else ""
         hint_str = f" [System Keyword/Sender rule suggests: '{cat}']" if cat else ""
         prompt = f"""You are an intelligent email categorisation assistant.
 
@@ -204,6 +255,7 @@ Existing categories: [{existing_str}]
 
 Email content:
 Sender: "{sender}"
+{learning_hint}
 {hint_str}
 \"\"\"{text}\"\"\"
 
@@ -242,7 +294,11 @@ Rules:
                 urgency = "Low"
             if category in labels:
                 is_new = False
-            if cat and score >= 0.9 and confidence < 0.7:
+            if learned_cat and learned_score >= 0.95:
+                category = learned_cat
+                confidence = max(confidence, learned_score)
+                is_new = False
+            elif cat and score >= 0.9 and confidence < 0.7:
                 category = cat
                 confidence = max(confidence, score)
                 is_new = False
@@ -262,7 +318,7 @@ Rules:
                 return {"category": cat, "confidence": 0.5, "is_new_category": False, "urgency": "Low", "deadlines": []}
             return {"category": "Personal", "confidence": 0.4, "is_new_category": False, "urgency": "Low", "deadlines": []}
 
-    def classify_batch(self, emails, labels):
+    def classify_batch(self, emails, labels, learning_profile=None):
         if not emails: return {}
         existing_str = ", ".join(f'"{c}"' for c in labels)
         
@@ -270,8 +326,16 @@ Rules:
         for e in emails:
             text_lower = e.get("text", "").lower()
             sender_lower = e.get("sender", "").lower()
+            learned_cat, learned_score = apply_learning_rules(e.get("sender", ""), labels, learning_profile)
             cat, score = keyword_classify(text_lower, sender_lower, labels)
-            hint_str = f"[System Hint: '{cat}'] " if cat else ""
+            if learned_cat and learned_score >= score:
+                cat, score = learned_cat, learned_score
+            hint_parts = []
+            if learned_cat:
+                hint_parts.append(f"User correction hint: '{learned_cat}'")
+            if cat:
+                hint_parts.append(f"System hint: '{cat}'")
+            hint_str = f"[{' | '.join(hint_parts)}] " if hint_parts else ""
             email_blocks.append(f'{e["id"]}. Sender: "{e.get("sender", "")}" {hint_str}"""{e["text"][:900]}"""')
 
         email_block = "\n".join(email_blocks)
@@ -305,11 +369,17 @@ Urgency Rules (CRITICAL to understand true intention):
                 cls = parsed.get(key, {})
                 text_lower = e.get("text", "").lower()
                 sender_lower = e.get("sender", "").lower()
+                learned_category, learned_score = apply_learning_rules(e.get("sender", ""), labels, learning_profile)
                 fallback_category, fallback_score = keyword_classify(text_lower, sender_lower, labels)
+                if learned_category and learned_score >= fallback_score:
+                    fallback_category, fallback_score = learned_category, learned_score
                 category = self._resolve_label_choice(cls.get("category", labels[0] if labels else "Personal"), labels, fallback_category)
                 urgency = cls.get("urgency", "Low")
                 confidence = float(cls.get("confidence", max(0.85, fallback_score if fallback_category else 0.5)))
-                if fallback_category and fallback_score >= 0.9 and confidence < 0.7:
+                if learned_category and learned_score >= 0.95:
+                    category = learned_category
+                    confidence = max(confidence, learned_score)
+                elif fallback_category and fallback_score >= 0.9 and confidence < 0.7:
                     category = fallback_category
                     confidence = max(confidence, fallback_score)
                 category, confidence = self._apply_fallback_guardrails(
@@ -333,7 +403,10 @@ Urgency Rules (CRITICAL to understand true intention):
             for email in emails:
                 text_lower = email.get("text", "").lower()
                 sender_lower = email.get("sender", "").lower()
+                learned_category, learned_score = apply_learning_rules(email.get("sender", ""), labels, learning_profile)
                 fallback_category, fallback_score = keyword_classify(text_lower, sender_lower, labels)
+                if learned_category and learned_score >= fallback_score:
+                    fallback_category, fallback_score = learned_category, learned_score
                 results[email["id"]] = {
                     "category": fallback_category or "Personal",
                     "confidence": fallback_score if fallback_category else 0.5,

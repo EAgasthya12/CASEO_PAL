@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { Capacitor } from '@capacitor/core';
-
-// Automatically point to android emulator loopback if running natively
-const API = Capacitor.isNativePlatform() ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+const API = 'http://localhost:5000';
 
 /**
  * Renders children only if the user is authenticated with the backend.

@@ -10,7 +10,7 @@ const Sidebar = ({ activeTab, emails, priorityPreview, inboxTotal, labelCounts, 
             id: 'inbox',
             label: 'Inbox',
             icon: <InboxIcon />,
-            count: inboxTotal || emails.length || null,
+            count: inboxTotal ?? null,
             badge: unreadCount > 0 ? unreadCount : null,
             badgeTitle: `${unreadCount} unread`,
         },
@@ -77,58 +77,64 @@ const Sidebar = ({ activeTab, emails, priorityPreview, inboxTotal, labelCounts, 
                 ))}
             </nav>
 
-            {priorityPreview?.length > 0 && (
-                <>
-                    <div className="sidebar-section-label sidebar-priority-label">Priority Now</div>
-                    <div className="priority-preview-list">
-                        {(() => {
-                            const urgencyOrder = { 'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
-                            const sorted = [...priorityPreview].sort((a, b) => {
-                                // 1. Primary Sort: Urgency Level (Highest First)
-                                const aOrd = urgencyOrder[a.urgency] ?? 4;
-                                const bOrd = urgencyOrder[b.urgency] ?? 4;
-                                if (aOrd !== bOrd) return aOrd - bOrd;
-                                
-                                // 2. Secondary Sort: Priority Score (Highest First)
-                                if ((b.priorityScore || 0) !== (a.priorityScore || 0)) {
-                                    return (b.priorityScore || 0) - (a.priorityScore || 0);
-                                }
+            <>
+                <div className="sidebar-section-label sidebar-priority-label">Priority Now</div>
+                <div className="priority-preview-list">
+                    {priorityPreview?.length > 0 ? (
+                        <>
+                            {(() => {
+                                const urgencyOrder = { 'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
+                                const sorted = [...priorityPreview].sort((a, b) => {
+                                    // 1. Primary Sort: Urgency Level (Highest First)
+                                    const aOrd = urgencyOrder[a.urgency] ?? 4;
+                                    const bOrd = urgencyOrder[b.urgency] ?? 4;
+                                    if (aOrd !== bOrd) return aOrd - bOrd;
 
-                                // 3. Tertiary Sort: Date (Most Recent First)
-                                return new Date(b.date) - new Date(a.date);
-                            });
-                            return sorted.slice(0, 5).map((email) => (
-                                <button
-                                    key={email._id}
-                                    className="priority-preview-card"
-                                    onClick={() => openPriorityEmail(email)}
-                                    title={email.subject}
-                                >
-                                    <div className="priority-preview-top">
-                                        <span className={`priority-pill priority-${(email.urgency || 'Low').toLowerCase()}`}>
-                                            {email.urgency || 'Low'}
-                                        </span>
-                                        {!email.isRead && <span className="priority-unread-dot" />}
-                                    </div>
-                                    <div className="priority-preview-subject">{email.subject}</div>
-                                    <div className="priority-preview-meta">
-                                        <span>{email.sender}</span>
-                                        <span>{new Date(email.date).toLocaleDateString('en-GB')}</span>
-                                    </div>
-                                </button>
-                            ));
-                        })()}
-                        <button
-                            className="priority-preview-link"
-                            onClick={() => switchTab('priority')}
-                        >
-                            {totalPriorityCount > 5
-                                ? `View all ${totalPriorityCount} priority mails`
-                                : 'Open full priority inbox'}
-                        </button>
-                    </div>
-                </>
-            )}
+                                    // 2. Secondary Sort: Priority Score (Highest First)
+                                    if ((b.priorityScore || 0) !== (a.priorityScore || 0)) {
+                                        return (b.priorityScore || 0) - (a.priorityScore || 0);
+                                    }
+
+                                    // 3. Tertiary Sort: Date (Most Recent First)
+                                    return new Date(b.date) - new Date(a.date);
+                                });
+                                return sorted.slice(0, 5).map((email) => (
+                                    <button
+                                        key={email._id}
+                                        className="priority-preview-card"
+                                        onClick={() => openPriorityEmail(email)}
+                                        title={email.subject}
+                                    >
+                                        <div className="priority-preview-top">
+                                            <span className={`priority-pill priority-${(email.urgency || 'Low').toLowerCase()}`}>
+                                                {email.urgency || 'Low'}
+                                            </span>
+                                            {!email.isRead && <span className="priority-unread-dot" />}
+                                        </div>
+                                        <div className="priority-preview-subject">{email.subject}</div>
+                                        <div className="priority-preview-meta">
+                                            <span>{email.sender}</span>
+                                            <span>{new Date(email.date).toLocaleDateString('en-GB')}</span>
+                                        </div>
+                                    </button>
+                                ));
+                            })()}
+                            <button
+                                className="priority-preview-link"
+                                onClick={() => switchTab('priority')}
+                            >
+                                {totalPriorityCount > 5
+                                    ? `View all ${totalPriorityCount} priority mails`
+                                    : 'Open full priority inbox'}
+                            </button>
+                        </>
+                    ) : (
+                        <div className="priority-preview-card" aria-live="polite">
+                            <div className="priority-preview-subject">No urgent emails today</div>
+                        </div>
+                    )}
+                </div>
+            </>
 
             <div className="sidebar-section-label" style={{ marginTop: '24px' }}>Preferences</div>
             <nav className="sidebar-nav">

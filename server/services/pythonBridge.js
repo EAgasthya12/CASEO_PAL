@@ -86,7 +86,7 @@ const buildSummaryFallback = (text = '', sender = '', subject = '') => {
 /**
  * Sends a single email to the Python service for classification + extraction.
  */
-const analyzeText = async (text, userCategories = [], sender = '') => {
+const analyzeText = async (text, userCategories = [], sender = '', learningProfile = null) => {
     if (isCircuitOpen()) {
         console.warn('[PythonBridge] Circuit open — using fallback for this email.');
         return FALLBACK;
@@ -95,7 +95,7 @@ const analyzeText = async (text, userCategories = [], sender = '') => {
     try {
         const response = await axios.post(
             `${PYTHON_API_URL}/classify`,
-            { text, user_categories: userCategories, sender },
+            { text, user_categories: userCategories, sender, learning_profile: learningProfile },
             { timeout: REQUEST_TIMEOUT_MS }
         );
         recordSuccess();
@@ -120,7 +120,7 @@ const analyzeText = async (text, userCategories = [], sender = '') => {
  * @param {string[]} userCategories
  * @returns {Promise<Object>} Map of { emailId: intelligenceResult }
  */
-const analyzeBatch = async (emails, userCategories = []) => {
+const analyzeBatch = async (emails, userCategories = [], learningProfile = null) => {
     if (!emails || emails.length === 0) return {};
 
     if (isCircuitOpen()) {
@@ -136,6 +136,7 @@ const analyzeBatch = async (emails, userCategories = []) => {
             {
                 emails: emails.map(e => ({ id: e.id, text: e.text, sender: e.sender || '' })),
                 user_categories: userCategories,
+                learning_profile: learningProfile,
             },
             { timeout: REQUEST_TIMEOUT_MS * 3 }  // batch gets 3× timeout
         );
@@ -148,7 +149,7 @@ const analyzeBatch = async (emails, userCategories = []) => {
         // Sequential fallback
         const results = {};
         for (const e of emails) {
-            results[e.id] = await analyzeText(e.text, userCategories, e.sender || '');
+            results[e.id] = await analyzeText(e.text, userCategories, e.sender || '', learningProfile);
         }
         return results;
     }

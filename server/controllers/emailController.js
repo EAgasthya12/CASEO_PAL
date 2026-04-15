@@ -6,6 +6,59 @@ const User = require('../models/User');
 // ── In-memory scan status (per userId) ───────────────────────────────────────
 // Note: this resets on server restart — acceptable for a dev/student project.
 const scanStatus = {};
+const mailboxCache = new Map();
+const MAILBOX_CACHE_TTL_MS = 5 * 60 * 1000;
+
+const normalizeCategory = (category = '') =>
+    category
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const extractSenderKey = (sender = '') => {
+    const match = sender.match(/<([^>]+)>/);
+    const value = (match ? match[1] : sender).trim().toLowerCase();
+    return value;
+};
+
+const extractSenderDomain = (sender = '') => {
+    const key = extractSenderKey(sender);
+    const atIndex = key.lastIndexOf('@');
+    return atIndex >= 0 ? key.slice(atIndex + 1) : '';
+};
+
+const upsertSenderRule = (rules = [], senderKey, senderDomain, category) => {
+    const now = new Date();
+    const nextRules = [...rules];
+    const existingIndex = nextRules.findIndex((rule) => rule.senderKey === senderKey);
+
+    if (existingIndex >= 0) {
+        nextRules[existingIndex] = {
+            ...nextRules[existingIndex],
+            senderDomain,
+            category,
+            strength: Math.min((nextRules[existingIndex].strength || 1) + 1, 12),
+            updatedAt: now,
+        };
+    } else {
+        nextRules.unshift({
+            senderKey,
+            senderDomain,
+            category,
+            strength: 1,
+            updatedAt: now,
+        });
+    }
+
+    return nextRules
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        .slice(0, 200);
+};
+
+const appendManualCorrection = (corrections = [], correction) =>
+    [correction, ...corrections]
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        .slice(0, 100);
 
 const stripHtml = (text = '') =>
     text
@@ -26,6 +79,63 @@ const buildPriorityFilter = () => ({
         { 'extractedDeadlines.date': { $gt: new Date() } },
     ],
 });
+
+const hasExplicitTime = (date) =>
+    date.getHours() !== 0 ||
+    date.getMinutes() !== 0 ||
+    date.getSeconds() !== 0 ||
+    date.getMilliseconds() !== 0;
+
+const getSystemDateRange = (now = new Date()) => {
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+    return { startOfToday, startOfTomorrow };
+};
+
+const getEffectiveDeadline = (value) => {
+    const deadline = new Date(value);
+    if (Number.isNaN(deadline.getTime())) return null;
+
+    if (!hasExplicitTime(deadline)) {
+        const endOfDay = new Date(deadline);
+        endOfDay.setHours(23, 59, 59, 999);
+        return endOfDay;
+    }
+
+    return deadline;
+};
+
+const matchesPriorityNowDeadline = (value, now = new Date()) => {
+    const deadline = new Date(value);
+    if (Number.isNaN(deadline.getTime())) return false;
+
+    const { startOfToday, startOfTomorrow } = getSystemDateRange(now);
+    if (deadline < startOfToday || deadline >= startOfTomorrow) return false;
+
+    const effectiveDeadline = getEffectiveDeadline(deadline);
+    return effectiveDeadline && effectiveDeadline >= now;
+};
+
+const buildPriorityNowPreviewFilter = (now = new Date()) => {
+    const { startOfToday, startOfTomorrow } = getSystemDateRange(now);
+
+    return {
+        $and: [
+            buildPriorityFilter(),
+            {
+                extractedDeadlines: {
+                    $elemMatch: {
+                        date: { $gte: startOfToday, $lt: startOfTomorrow },
+                    },
+                },
+            },
+        ],
+    };
+};
 
 // ── Sync / progressive scan ───────────────────────────────────────────────────
 exports.syncEmails = async (req, res) => {
@@ -90,15 +200,24 @@ exports.getMailbox = async (req, res) => {
     const labelMap = { sent: 'SENT', spam: 'SPAM', archive: 'TRASH' };
     const tab = (req.query.label || '').toLowerCase();
     const label = labelMap[tab];
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 15));
+    const pageToken = typeof req.query.pageToken === 'string' ? req.query.pageToken : '';
 
     if (!label) {
         return res.status(400).json({ error: `Invalid mailbox label: '${tab}'. Use sent, spam, or archive.` });
     }
 
     try {
+        const cacheKey = `${req.user._id}:${label}:${limit}:${pageToken || 'first'}`;
+        const cached = mailboxCache.get(cacheKey);
+        if (cached && (Date.now() - cached.fetchedAt) < MAILBOX_CACHE_TTL_MS) {
+            return res.json(cached.payload);
+        }
+
         console.log(`[EmailController] Fetching mailbox: ${label} for ${req.user.email}`);
-        const emails = await fetchMailboxEmails(req.user, label, 30);
-        res.json(emails);
+        const payload = await fetchMailboxEmails(req.user, label, { count: limit, pageToken });
+        mailboxCache.set(cacheKey, { payload, fetchedAt: Date.now() });
+        res.json(payload);
     } catch (error) {
         console.error('[EmailController] getMailbox error:', error.message);
         res.status(500).json({ error: `Failed to fetch ${tab} emails` });
@@ -128,36 +247,84 @@ exports.getUserCategories = async (req, res) => {
 };
 
 exports.addUserCategory = async (req, res) => {
-    const { category } = req.body;
-    if (!category || category.trim() === '') {
-        return res.status(400).json({ error: 'Category name is required' });
-    }
-    try {
-        const user = await User.findByIdAndUpdate(
-            req.user._id,
-            { $addToSet: { categories: category.trim() } },
-            { new: true }
-        ).select('categories');
-        res.json({ success: true, categories: user.categories });
-    } catch (error) {
-        console.error('[EmailController] addUserCategory error:', error.message);
-        res.status(500).json({ error: 'Failed to add user category' });
-    }
+    return res.status(403).json({
+        error: 'Categories are created automatically by the classifier. You can only reassign emails to existing categories.',
+    });
 };
 
 // ── Update email category ─────────────────────────────────────────────────────
 exports.updateEmailCategory = async (req, res) => {
-    const { category } = req.body;
-    if (!category) return res.status(400).json({ error: 'Category string is required' });
+    const normalizedCategory = normalizeCategory(req.body.category || '');
+    if (!normalizedCategory) return res.status(400).json({ error: 'Category string is required' });
 
     try {
-        const email = await Email.findOneAndUpdate(
-            { _id: req.params.id, userId: req.user._id },
-            { category: category.trim() },
-            { new: true }
-        );
+        const user = await User.findById(req.user._id).select('categories categoryLearning');
+        const existingCategories = user?.categories || [];
+        if (!existingCategories.includes(normalizedCategory)) {
+            return res.status(400).json({
+                error: 'You can only assign emails to existing categories. New categories are created automatically by the model.',
+            });
+        }
+
+        const email = await Email.findOne({ _id: req.params.id, userId: req.user._id });
         if (!email) return res.status(404).json({ error: 'Email not found' });
-        res.json({ success: true, email });
+
+        const previousCategory = email.category || '';
+        if (previousCategory === normalizedCategory) {
+            return res.json({ success: true, email, categories: existingCategories });
+        }
+
+        const senderKey = extractSenderKey(email.sender || '');
+        const senderDomain = extractSenderDomain(email.sender || '');
+
+        email.category = normalizedCategory;
+        email.confidence = Math.max(email.confidence || 0, 0.99);
+        email.isProcessed = true;
+        await email.save();
+
+        const nextSenderRules = senderKey
+            ? upsertSenderRule(user?.categoryLearning?.senderRules, senderKey, senderDomain, normalizedCategory)
+            : (user?.categoryLearning?.senderRules || []);
+        const nextCorrections = appendManualCorrection(user?.categoryLearning?.manualCorrections, {
+            emailId: email.googleMessageId || String(email._id),
+            senderKey,
+            senderDomain,
+            originalCategory: previousCategory,
+            correctedCategory: normalizedCategory,
+            subject: email.subject || '',
+            updatedAt: new Date(),
+        });
+
+        await User.findByIdAndUpdate(req.user._id, {
+            $set: {
+                categories: existingCategories,
+                categoryLearning: {
+                    senderRules: nextSenderRules,
+                    manualCorrections: nextCorrections,
+                },
+            },
+        });
+
+        if (senderKey) {
+            await Email.updateMany(
+                {
+                    userId: req.user._id,
+                    sender: email.sender,
+                    _id: { $ne: email._id },
+                    isUseful: { $ne: false },
+                },
+                {
+                    $set: {
+                        category: normalizedCategory,
+                        isProcessed: true,
+                    },
+                    $max: { confidence: 0.96 },
+                }
+            );
+        }
+
+        const refreshedEmail = await Email.findById(email._id);
+        res.json({ success: true, email: refreshedEmail, categories: existingCategories });
     } catch (error) {
         console.error('[EmailController] updateEmailCategory error:', error.message);
         res.status(500).json({ error: 'Failed to update email category' });
@@ -227,16 +394,23 @@ exports.getScanStatus = (req, res) => {
 
 exports.getPriorityPreview = async (req, res) => {
     try {
+        const now = new Date();
         const emails = await Email.find({
             userId: req.user._id,
             isUseful: { $ne: false },
-            ...buildPriorityFilter(),
+            ...buildPriorityNowPreviewFilter(now),
         })
             .sort({ priorityScore: -1, date: -1 })
-            .limit(8)
+            .limit(25)
             .lean();
 
-        res.json({ emails });
+        const filteredEmails = emails.filter((email) =>
+            (email.extractedDeadlines || []).some((deadline) =>
+                matchesPriorityNowDeadline(deadline.date, now)
+            )
+        );
+
+        res.json({ emails: filteredEmails.slice(0, 8) });
     } catch (error) {
         console.error('[EmailController] getPriorityPreview error:', error.message);
         res.status(500).json({ error: 'Failed to fetch priority preview' });

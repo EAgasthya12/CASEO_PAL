@@ -10,11 +10,23 @@
     --sidebar-bg: #0e1320;
     --card-bg: #131929;
     --card-hover: #18203a;
+    --surface-1: #111827;
+    --surface-2: #162033;
+    --surface-3: #1b2640;
     --border: rgba(255, 255, 255, 0.07);
     --border-soft: rgba(255, 255, 255, 0.04);
     --text-1: #f1f5f9;
     --text-2: #94a3b8;
     --text-3: #475569;
+    --input-bg: rgba(255, 255, 255, 0.06);
+    --input-bg-strong: #182235;
+    --dropdown-bg: #162033;
+    --dropdown-hover: rgba(255, 255, 255, 0.08);
+    --control-text: #f1f5f9;
+    --control-muted: #94a3b8;
+    --control-surface: #182235;
+    --control-surface-hover: #1d2840;
+    --focus-ring: rgba(99, 102, 241, 0.2);
     --accent: #6366f1;
     --accent-2: #8b5cf6;
     --accent-glow: rgba(99, 102, 241, 0.25);
@@ -40,11 +52,23 @@
     --sidebar-bg: #ffffff;
     --card-bg: #ffffff;
     --card-hover: #f7f8ff;
+    --surface-1: #ffffff;
+    --surface-2: #f8fafc;
+    --surface-3: #eef2ff;
     --border: rgba(0, 0, 0, 0.08);
     --border-soft: rgba(0, 0, 0, 0.05);
     --text-1: #0f172a;
     --text-2: #475569;
     --text-3: #94a3b8;
+    --input-bg: #f8fafc;
+    --input-bg-strong: #ffffff;
+    --dropdown-bg: #ffffff;
+    --dropdown-hover: #f8fafc;
+    --control-text: #0f172a;
+    --control-muted: #64748b;
+    --control-surface: #ffffff;
+    --control-surface-hover: #f8fafc;
+    --focus-ring: rgba(79, 70, 229, 0.12);
     --accent: #4f46e5;
     --accent-2: #7c3aed;
     --accent-glow: rgba(79, 70, 229, 0.15);
@@ -398,6 +422,11 @@
     color: var(--text-1);
     font-family: 'Inter', sans-serif;
     overflow: hidden;
+    color-scheme: dark;
+}
+
+.dashboard-layout[data-theme="light"] {
+    color-scheme: light;
 }
 
 
@@ -811,7 +840,7 @@
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--input-bg);
     color: var(--text-1);
     font-family: 'Inter', sans-serif;
 }
@@ -822,8 +851,8 @@
 
 .search-bar input:focus {
     border-color: var(--accent);
-    background: rgba(99, 102, 241, 0.06);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    background: var(--input-bg-strong);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .top-actions {
@@ -972,7 +1001,7 @@
     padding: 8px 16px;
     border-radius: 10px;
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--input-bg);
     color: var(--text-2);
     cursor: pointer;
     font-size: 0.85rem;
@@ -1002,7 +1031,7 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    background: #1a2236;
+    background: var(--dropdown-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
@@ -1029,7 +1058,7 @@
 }
 
 .dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--dropdown-hover);
     color: var(--text-1);
 }
 
@@ -1048,6 +1077,81 @@
     text-transform: uppercase;
     letter-spacing: 0.07em;
     padding: 4px 4px 0;
+}
+
+.dropdown-menu input,
+.dropdown-menu select,
+.dropdown-menu button,
+.modal-content input,
+.modal-content select,
+.modal-content button {
+    font-family: 'Inter', sans-serif;
+}
+
+.dashboard-layout[data-theme="dark"] .date-picker,
+.dashboard-layout[data-theme="dark"] .search-bar input,
+.dashboard-layout[data-theme="dark"] .dropdown-menu,
+.dashboard-layout[data-theme="dark"] .modal-content {
+    color: var(--text-1);
+}
+
+.dashboard-layout input,
+.dashboard-layout select,
+.dashboard-layout textarea {
+    color: var(--control-text);
+    background: var(--control-surface);
+    border-color: var(--border);
+}
+
+.dashboard-layout input::placeholder,
+.dashboard-layout textarea::placeholder {
+    color: var(--control-muted);
+    opacity: 1;
+}
+
+.dashboard-layout select,
+.dashboard-layout button,
+.dashboard-layout .dropdown-item,
+.dashboard-layout .category-chip,
+.dashboard-layout .search-clear-btn {
+    color: var(--control-text);
+}
+
+.dashboard-layout select option {
+    background: var(--control-surface);
+    color: var(--control-text);
+}
+
+.dashboard-layout .icon-btn,
+.dashboard-layout .filter-btn,
+.dashboard-layout .sort-btn,
+.dashboard-layout .search-clear-btn {
+    background-color: transparent;
+}
+
+.dashboard-layout .icon-btn:hover,
+.dashboard-layout .filter-btn:hover,
+.dashboard-layout .sort-btn:hover {
+    color: var(--text-1);
+}
+
+.dashboard-layout .dropdown-menu,
+.dashboard-layout .modal-content,
+.dashboard-layout .pr-cat-dropdown {
+    color: var(--control-text);
+}
+
+.dashboard-layout[data-theme="dark"] .date-picker::-webkit-calendar-picker-indicator {
+    filter: invert(0.9);
+    opacity: 0.9;
+}
+
+.dashboard-layout[data-theme="dark"] .date-picker::-webkit-datetime-edit,
+.dashboard-layout[data-theme="dark"] .date-picker::-webkit-datetime-edit-text,
+.dashboard-layout[data-theme="dark"] .date-picker::-webkit-datetime-edit-month-field,
+.dashboard-layout[data-theme="dark"] .date-picker::-webkit-datetime-edit-day-field,
+.dashboard-layout[data-theme="dark"] .date-picker::-webkit-datetime-edit-year-field {
+    color: var(--text-1);
 }
 
 .category-row {
@@ -1091,7 +1195,7 @@
     padding: 8px;
     border-radius: 8px;
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--input-bg-strong);
     color: var(--text-1);
     font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
@@ -1101,6 +1205,7 @@
 
 .date-picker:focus {
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 @keyframes fadeIn {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { Capacitor } from '@capacitor/core';
+
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
@@ -12,7 +12,7 @@ import EmailModal from './dashboard/EmailModal';
 import { FilterIcon, SortIcon } from './dashboard/Icons';
 
 const MAILBOX_TABS = ['sent', 'spam'];
-const API = Capacitor.isNativePlatform() ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+const API = 'http://localhost:5000';
 
 const Dashboard = () => {
     // ── Core state ────────────────────────────────────────────────────────────
@@ -35,8 +35,11 @@ const Dashboard = () => {
     // ── Mailbox (Sent / Spam) state ───────────────────────────────────────────
     const [mailboxEmails, setMailboxEmails]   = useState([]);
     const [mailboxLoading, setMailboxLoading] = useState(false);
-    const [labelCounts, setLabelCounts]       = useState({ sent: null, spam: null });
+    const [mailboxLoadingMore, setMailboxLoadingMore] = useState(false);
+    const [labelCounts, setLabelCounts]       = useState({ inbox: null, unread: 0, sent: null, spam: null, priority: 0, notUseful: 0, categories: {} });
     const [priorityPreview, setPriorityPreview] = useState([]);
+    const [mailboxCache, setMailboxCache] = useState({});
+    const [mailboxNextPageToken, setMailboxNextPageToken] = useState(null);
 
     // ── Filter / Sort state ───────────────────────────────────────────────────
     const [filterOpen, setFilterOpen]       = useState(false);
@@ -100,18 +103,68 @@ const Dashboard = () => {
         }
     }, []);
 
-    const fetchMailbox = async (tab) => {
-        setMailboxLoading(true);
-        setMailboxEmails([]);
+    const updateLabelCounts = useCallback((updater) => {
+        setLabelCounts(prev => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            return { ...prev, ...next };
+        });
+    }, []);
+
+    const fetchMailbox = useCallback(async (tab, options = {}) => {
+        const { append = false } = options;
+        const cached = mailboxCache[tab];
+        const nextPageToken = append ? cached?.nextPageToken : null;
+
+        if (!append && cached?.emails?.length) {
+            setMailboxEmails(cached.emails);
+            setMailboxNextPageToken(cached.nextPageToken || null);
+            setMailboxLoading(false);
+            return;
+        }
+
+        if (append && !nextPageToken) return;
+
+        if (append) {
+            setMailboxLoadingMore(true);
+        } else {
+            setMailboxLoading(true);
+            setMailboxNextPageToken(null);
+        }
+
         try {
-            const res = await axios.get(`${API}/api/emails/mailbox?label=${tab}`, { withCredentials: true });
-            setMailboxEmails(res.data);
+            const params = new URLSearchParams({ label: tab, limit: tab === 'spam' ? '12' : '15' });
+            if (nextPageToken) params.set('pageToken', nextPageToken);
+
+            const res = await axios.get(`${API}/api/emails/mailbox?${params.toString()}`, { withCredentials: true });
+            const payload = Array.isArray(res.data) ? { emails: res.data, nextPageToken: null } : res.data;
+            const nextEmails = append
+                ? [...(cached?.emails || []), ...(payload.emails || [])]
+                : (payload.emails || []);
+
+            setMailboxEmails(nextEmails);
+            setMailboxNextPageToken(payload.nextPageToken || null);
+            setMailboxCache(prev => ({
+                ...prev,
+                [tab]: {
+                    emails: nextEmails,
+                    nextPageToken: payload.nextPageToken || null,
+                },
+            }));
         } catch (err) {
             console.error(`Error fetching ${tab}:`, err);
             toast.error(`Could not load ${tab} emails.`);
+            if (!append) {
+                setMailboxEmails(cached?.emails || []);
+                setMailboxNextPageToken(cached?.nextPageToken || null);
+            }
+        } finally {
+            if (append) {
+                setMailboxLoadingMore(false);
+            } else {
+                setMailboxLoading(false);
+            }
         }
-        setMailboxLoading(false);
-    };
+    }, [mailboxCache]);
 
     // ── Debounced search ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -156,6 +209,7 @@ const Dashboard = () => {
                         setScanStatus({ running: false, processed: 0, total: 0 });
                         await fetchLabelCounts(); // Only refresh heavy counts at the very end
                         await fetchPriorityPreview();
+                        await fetchUser();
 
                         if (res.data.processed === 0) {
                             toast.success('Your inbox is already up to date!');
@@ -210,34 +264,74 @@ const Dashboard = () => {
     const handleMarkRead = useCallback(async (emailId) => {
         try {
             await axios.put(`${API}/api/emails/${emailId}/read`, {}, { withCredentials: true });
-            setEmails(prev => prev.map(e => e._id === emailId ? { ...e, isRead: true } : e));
+            let decremented = false;
+            setEmails(prev => prev.map(e => {
+                if (e._id !== emailId) return e;
+                if (!e.isRead) decremented = true;
+                return { ...e, isRead: true };
+            }));
             if (selectedEmail?._id === emailId) setSelectedEmail(prev => ({ ...prev, isRead: true }));
+            if (decremented) {
+                updateLabelCounts(prev => ({
+                    unread: Math.max((prev.unread || 0) - 1, 0),
+                }));
+            }
         } catch { /* non-critical */ }
-    }, [selectedEmail?._id]);
+    }, [selectedEmail?._id, updateLabelCounts]);
 
-    const handleCategoryChange = useCallback((updatedEmail) => {
+    const handleCategoryChange = useCallback((updatedEmail, nextCategories = null) => {
         setSelectedEmail(updatedEmail);
         setEmails(prev => prev.map(e => e._id === updatedEmail._id ? { ...e, category: updatedEmail.category } : e));
+        if (Array.isArray(nextCategories) && nextCategories.length > 0) {
+            setUserCategories(nextCategories);
+        } else if (updatedEmail?.category) {
+            setUserCategories(prev => prev.includes(updatedEmail.category) ? prev : [...prev, updatedEmail.category]);
+        }
     }, []);
 
     const handleIgnoreSender = useCallback(async (sender) => {
         const tId = toast.loading('Blocking sender...');
         try {
             await axios.post(`${API}/api/users/ignore-sender`, { sender }, { withCredentials: true });
-            setEmails(prev => prev.filter(e => e.sender !== sender));
+            let removedUnread = 0;
+            let removedInbox = 0;
+            setEmails(prev => prev.filter(e => {
+                if (e.sender !== sender) return true;
+                removedInbox += 1;
+                if (!e.isRead) removedUnread += 1;
+                return false;
+            }));
+            if (removedInbox || removedUnread) {
+                updateLabelCounts(prev => ({
+                    inbox: prev.inbox == null ? prev.inbox : Math.max(prev.inbox - removedInbox, 0),
+                    unread: Math.max((prev.unread || 0) - removedUnread, 0),
+                }));
+            }
             toast.success(`Sender blocked and emails removed.`, { id: tId });
         } catch {
             toast.error('Failed to ignore sender', { id: tId });
         }
-    }, []);
+    }, [updateLabelCounts]);
 
     const handleToggleUseful = useCallback(async (email, isUseful) => {
         const origId = email._id;
         try {
             await axios.put(`${API}/api/emails/${origId}/useful`, { isUseful }, { withCredentials: true });
-            // Remove from current view
+            const wasUnread = !email.isRead;
+
             setEmails(prev => prev.filter(e => e._id !== origId));
             setSelectedEmail(null);
+            updateLabelCounts(prev => ({
+                inbox: isUseful
+                    ? prev.inbox == null ? prev.inbox : prev.inbox + 1
+                    : prev.inbox == null ? prev.inbox : Math.max(prev.inbox - 1, 0),
+                unread: wasUnread
+                    ? (isUseful ? (prev.unread || 0) + 1 : Math.max((prev.unread || 0) - 1, 0))
+                    : (prev.unread || 0),
+                notUseful: isUseful
+                    ? Math.max((prev.notUseful || 0) - 1, 0)
+                    : (prev.notUseful || 0) + 1,
+            }));
 
             if (!isUseful) {
                 toast((t) => (
@@ -266,7 +360,7 @@ const Dashboard = () => {
         } catch {
             toast.error('Failed to update email status');
         }
-    }, [handleIgnoreSender]);
+    }, [handleIgnoreSender, updateLabelCounts]);
 
     // ── Filter / Sort helpers ─────────────────────────────────────────────────
     const toggleFilter = () => { setFilterOpen(o => !o); setSortOpen(false); };
@@ -373,7 +467,7 @@ const Dashboard = () => {
                 activeTab={activeTab}
                 emails={emails}
                 priorityPreview={priorityPreview}
-                inboxTotal={pagination.total}
+                inboxTotal={labelCounts.inbox}
                 labelCounts={labelCounts}
                 user={user}
                 imgError={imgError}
@@ -548,6 +642,17 @@ const Dashboard = () => {
                                 {!mailboxLoading && mailboxEmails.map(email => (
                                     <MailboxEmailItem key={email._id} email={email} tab={activeTab} onClick={openEmail} />
                                 ))}
+                                {!mailboxLoading && mailboxEmails.length > 0 && mailboxNextPageToken && (
+                                    <div className="empty-state" style={{ paddingTop: 12 }}>
+                                        <button
+                                            className="filter-btn"
+                                            onClick={() => fetchMailbox(activeTab, { append: true })}
+                                            disabled={mailboxLoadingMore}
+                                        >
+                                            {mailboxLoadingMore ? 'Loading more…' : `Load more ${activeTab}`}
+                                        </button>
+                                    </div>
+                                )}
                             </>
                         ) : (
                             <>

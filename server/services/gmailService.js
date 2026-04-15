@@ -49,6 +49,22 @@ const needsReclassification = (email) =>
     email.isPriority === undefined ||
     email.priorityScore === undefined;
 
+const buildLearningProfile = (categoryLearning = {}) => ({
+    sender_rules: (categoryLearning.senderRules || []).map((rule) => ({
+        sender_key: rule.senderKey,
+        sender_domain: rule.senderDomain || '',
+        category: rule.category,
+        strength: rule.strength || 1,
+    })),
+    manual_corrections: (categoryLearning.manualCorrections || []).map((entry) => ({
+        sender_key: entry.senderKey || '',
+        sender_domain: entry.senderDomain || '',
+        original_category: entry.originalCategory || '',
+        corrected_category: entry.correctedCategory || '',
+        subject: entry.subject || '',
+    })),
+});
+
 const computePrioritySignals = ({ subject = '', snippet = '', plainTextBody = '', urgency = 'Low', deadlines = [] }) => {
     const now = new Date();
     const text = `${subject}\n${snippet}\n${plainTextBody}`.toLowerCase();
@@ -301,12 +317,13 @@ const fetchAndProcessEmails = async (user, onProgress, maxThreads = INITIAL_SYNC
         const priorityIds = idsToProcess.slice(0, PRIORITY_BATCH);
         const remainingIds = idsToProcess.slice(PRIORITY_BATCH);
 
-        const userDoc = await User.findById(user._id).select('categories ignoredSenders');
+        const userDoc = await User.findById(user._id).select('categories ignoredSenders categoryLearning');
         const userCategories = userDoc?.categories?.length ? userDoc.categories : DEFAULT_CATEGORIES;
         const ignoredSenders = userDoc?.ignoredSenders || [];
+        const learningProfile = buildLearningProfile(userDoc?.categoryLearning || {});
 
         console.log(`[GmailService] Priority batch: classifying ${priorityIds.length} newest emails first…`);
-        await _processAndSave(gmail, priorityIds, user, userCategories, ignoredSenders);
+        await _processAndSave(gmail, priorityIds, user, userCategories, ignoredSenders, learningProfile);
         if (onProgress) onProgress(priorityIds.length, idsToProcess.length);
 
         // Return the first page of results immediately — the caller gets fast data
@@ -314,7 +331,7 @@ const fetchAndProcessEmails = async (user, onProgress, maxThreads = INITIAL_SYNC
 
         // ── Step 7: Background — process remaining emails without blocking ────────
         if (remainingIds.length > 0) {
-            _processRemainingBackground(gmail, remainingIds, user, userCategories, ignoredSenders, onProgress, priorityIds.length, idsToProcess.length);
+            _processRemainingBackground(gmail, remainingIds, user, userCategories, ignoredSenders, learningProfile, onProgress, priorityIds.length, idsToProcess.length);
         }
 
         return { emails: firstPage, newCount: idsToProcess.length };
@@ -328,7 +345,7 @@ const fetchAndProcessEmails = async (user, onProgress, maxThreads = INITIAL_SYNC
 /**
  * Internal: fetch details + batch-classify + save a list of message IDs.
  */
-const _processAndSave = async (gmail, ids, user, userCategories, ignoredSenders = []) => {
+const _processAndSave = async (gmail, ids, user, userCategories, ignoredSenders = [], learningProfile = null) => {
     if (ids.length === 0) return;
 
     // Fetch details in parallel chunks of 20
@@ -348,7 +365,7 @@ const _processAndSave = async (gmail, ids, user, userCategories, ignoredSenders 
         sender: e.from,
     }));
 
-    const intelMap = await analyzeBatch(batchInput, userCategories);
+    const intelMap = await analyzeBatch(batchInput, userCategories, learningProfile);
 
     // Persist + auto-create new categories
     await Promise.allSettled(
@@ -461,13 +478,13 @@ const _fetchDetail = async (gmail, id) => {
 /**
  * Internal: process remaining emails in background
  */
-const _processRemainingBackground = (gmail, ids, user, userCategories, ignoredSenders, onProgress, processed, total) => {
+const _processRemainingBackground = (gmail, ids, user, userCategories, ignoredSenders, learningProfile, onProgress, processed, total) => {
     setImmediate(async () => {
         try {
             const CHUNK = 50;
             for (let i = 0; i < ids.length; i += CHUNK) {
                 const chunk = ids.slice(i, i + CHUNK);
-                await _processAndSave(gmail, chunk, user, userCategories, ignoredSenders);
+                await _processAndSave(gmail, chunk, user, userCategories, ignoredSenders, learningProfile);
                 processed += chunk.length;
                 if (onProgress) onProgress(processed, total, true);
                 console.log(`[GmailService] Background progress: ${processed}/${total}`);
@@ -485,20 +502,22 @@ const _processRemainingBackground = (gmail, ids, user, userCategories, ignoredSe
  * Fetch emails from a Gmail mailbox label (SENT, SPAM, TRASH) directly from Gmail API.
  * No DB storage, no AI analysis.
  */
-const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
+const fetchMailboxEmails = async (user, label = 'SENT', options = {}) => {
     try {
         if (!user.accessToken) throw new Error('No access token found for user');
+        const count = Math.min(50, Math.max(1, options.count || 15));
+        const pageToken = options.pageToken || undefined;
 
         const auth = getOAuthClient(user);
         const gmail = google.gmail({ version: 'v1', auth });
 
         console.log(`[GmailService] Fetching ${label} mailbox for ${user.email}…`);
 
-        const response = await gmail.users.messages.list({ userId: 'me', maxResults: count, labelIds: [label] });
+        const response = await gmail.users.messages.list({ userId: 'me', maxResults: count, labelIds: [label], pageToken });
         const messages = response.data.messages;
         if (!messages || messages.length === 0) {
             console.log(`[GmailService] No messages found in ${label}.`);
-            return [];
+            return { emails: [], nextPageToken: null };
         }
 
         const details = await Promise.all(
@@ -524,8 +543,9 @@ const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
         
         if (label === 'SPAM' && results.length > 0) {
             console.log(`[GmailService] Checking SPAM batch for important emails...`);
-            const userDoc = await User.findById(user._id).select('categories');
+            const userDoc = await User.findById(user._id).select('categories categoryLearning');
             const userCategories = userDoc?.categories?.length ? userDoc.categories : DEFAULT_CATEGORIES;
+            const learningProfile = buildLearningProfile(userDoc?.categoryLearning || {});
 
             const batchInput = results.map(r => ({
                 id: r._id,
@@ -537,7 +557,7 @@ const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
                 sender: r.sender || ''
             }));
             
-            const intelMap = await analyzeBatch(batchInput, userCategories);
+            const intelMap = await analyzeBatch(batchInput, userCategories, learningProfile);
 
             results.forEach(r => {
                 const intel = intelMap[r._id];
@@ -557,7 +577,10 @@ const fetchMailboxEmails = async (user, label = 'SENT', count = 30) => {
         }
 
         console.log(`[GmailService] Fetched ${results.length} messages from ${label}.`);
-        return results;
+        return {
+            emails: results,
+            nextPageToken: response.data.nextPageToken || null,
+        };
 
     } catch (error) {
         console.error(`[GmailService] fetchMailboxEmails error (${label}):`, error.message);
@@ -589,6 +612,11 @@ const getLabelMessageCounts = async (user) => {
         ...buildPriorityFilter(),
     });
 
+    const inboxQuery = Email.countDocuments({
+        userId: user._id,
+        isUseful: { $ne: false },
+    });
+
     const unreadQuery = Email.countDocuments({
         userId: user._id,
         isUseful: { $ne: false },
@@ -605,10 +633,11 @@ const getLabelMessageCounts = async (user) => {
         { $group: { _id: "$category", count: { $sum: 1 } } }
     ]);
 
-    const [sent, spam, priority, unread, notUseful, categoriesRaw] = await Promise.all([
+    const [sent, spam, priority, inbox, unread, notUseful, categoriesRaw] = await Promise.all([
         fetchCount('SENT'),
         fetchCount('SPAM'),
         priorityQuery,
+        inboxQuery,
         unreadQuery,
         notUsefulQuery,
         categoriesQuery
@@ -619,7 +648,7 @@ const getLabelMessageCounts = async (user) => {
         if (cat._id) { categories[cat._id] = cat.count; }
     }
 
-    return { sent, spam, priority, unread, notUseful, categories };
+    return { sent, spam, priority, inbox, unread, notUseful, categories };
 };
 
 module.exports = { fetchAndProcessEmails, fetchMailboxEmails, getLabelMessageCounts };

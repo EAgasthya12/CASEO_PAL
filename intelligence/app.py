@@ -73,13 +73,19 @@ def classify():
         text = data.get('text', '')
         user_categories = data.get('user_categories', [])
         sender = data.get('sender', '')
+        learning_profile = data.get('learning_profile', {})
 
         if not text:
             logging.warning("No text provided in request")
             return jsonify({"error": "No text provided"}), 400
 
         # Classification (Tier 1: keyword, Tier 2: Gemini 2.5 Flash, Tier 3: fallback)
-        cls_result = classifier.classify(text, user_categories=user_categories, sender=sender)
+        cls_result = classifier.classify(
+            text,
+            user_categories=user_categories,
+            sender=sender,
+            learning_profile=learning_profile,
+        )
 
         # Deadline + urgency extraction
         deadlines, date_urgency = extractor.extract_deadlines(text)
@@ -113,6 +119,7 @@ def classify_batch():
 
         emails = data.get('emails', [])
         user_categories = data.get('user_categories', [])
+        learning_profile = data.get('learning_profile', {})
 
         if not emails:
             return jsonify({"error": "No emails provided"}), 400
@@ -126,7 +133,7 @@ def classify_batch():
             batch = emails[i:i + batch_size]
             # Re-index within the batch for the prompt
             indexed = [{"id": j, "text": item.get("text", ""), "sender": item.get("sender", "")} for j, item in enumerate(batch)]
-            batch_result = classifier.classify_batch(indexed, labels)
+            batch_result = classifier.classify_batch(indexed, labels, learning_profile=learning_profile)
 
             for j, item in enumerate(batch):
                 msg_id = item["id"]

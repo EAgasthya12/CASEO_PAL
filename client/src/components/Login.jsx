@@ -137,8 +137,7 @@ const Login = () => {
     const handleLogin = () => {
         setLoading(true);
         setTimeout(() => {
-            const API = window.Capacitor?.isNativePlatform?.() ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            window.location.href = `${API}/auth/google`;
+            window.location.href = 'http://localhost:5000/auth/google';
         }, 400);
     };
 

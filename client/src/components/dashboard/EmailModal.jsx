@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { ExternalLinkIcon } from './Icons';
 import { decodeHtmlEntities, deduplicateDeadlines, deadlineTag } from './EmailItem';
 
-const API = window.Capacitor?.isNativePlatform?.() ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+const API = 'http://localhost:5000';
 
 
 // ── Pill Ribbon CSS injected once ─────────────────────────────────────────────
@@ -12,17 +12,18 @@ const RIBBON_STYLE = `
 .pill-ribbon {
     display: flex; align-items: stretch;
     background: var(--modal-ribbon-bg, #fff);
-    border: 1px solid rgba(0,0,0,0.13);
+    border: 1px solid var(--modal-ribbon-border, rgba(0,0,0,0.13));
     border-radius: 11px;
     overflow: visible;
     flex-wrap: wrap;
     margin: 0 20px;
     position: relative;
+    color: var(--modal-ribbon-text, inherit);
 }
 .pill-ribbon .pr-seg {
     display: flex; align-items: center; gap: 7px;
     padding: 0 15px; height: 42px; white-space: nowrap;
-    border-right: 0.5px solid rgba(0,0,0,0.08);
+    border-right: 0.5px solid var(--modal-ribbon-border, rgba(0,0,0,0.08));
     flex-shrink: 0;
 }
 .pill-ribbon .pr-seg:last-child { border-right: none; }
@@ -38,8 +39,8 @@ const RIBBON_STYLE = `
 .pill-ribbon .pr-priority-low      { color: #65a30d; }
 .pill-ribbon .pr-date-div { width:1px; height:18px; background:rgba(0,0,0,0.08); flex-shrink:0; }
 .pill-ribbon .pr-date-upcoming      { font-size:12px; font-weight:600; color:#d97706; }
-.pill-ribbon .pr-date-expired       { font-size:12px; color:#9ca3af; text-decoration:line-through; opacity:0.55; }
-.pill-ribbon .pr-date-upcoming-plain{ font-size:12px; color:#6b7280; }
+.pill-ribbon .pr-date-expired       { font-size:12px; color:var(--modal-ribbon-muted, #9ca3af); text-decoration:line-through; opacity:0.55; }
+.pill-ribbon .pr-date-upcoming-plain{ font-size:12px; color:var(--modal-ribbon-muted, #6b7280); }
 .pill-ribbon .pr-cat-wrap  { position:relative; display:flex; align-items:stretch; flex-shrink:0; }
 .pill-ribbon .pr-cat-seg   { display:flex; align-items:center; gap:6px; padding:0 14px; height:42px; cursor:pointer; background:rgba(99,102,241,0.07); border-right:0.5px solid rgba(99,102,241,0.2); user-select:none; transition:background 0.15s; }
 .pill-ribbon .pr-cat-seg:hover { background:rgba(99,102,241,0.13); }
@@ -49,24 +50,26 @@ const RIBBON_STYLE = `
 .pill-ribbon .pr-cat-chevron.open { transform:rotate(180deg); }
 .pill-ribbon .pr-cat-dropdown {
     display:none; position:absolute; top:calc(100% + 7px); left:0;
-    background:var(--modal-ribbon-bg,#fff);
-    border:1px solid rgba(0,0,0,0.12); border-radius:9px;
+    background:var(--modal-ribbon-popover,var(--modal-ribbon-bg,#fff));
+    border:1px solid var(--modal-ribbon-border, rgba(0,0,0,0.12)); border-radius:9px;
     min-width:160px; z-index:200;
     max-height:200px; overflow-y:auto;
+    color: var(--modal-ribbon-text, inherit);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
 }
 .pill-ribbon .pr-cat-dropdown.open { display:block; }
 .pill-ribbon .pr-cat-option { padding:9px 15px; font-size:12px; color:inherit; cursor:pointer; transition:background 0.1s; }
-.pill-ribbon .pr-cat-option:hover { background:rgba(0,0,0,0.04); }
+.pill-ribbon .pr-cat-option:hover { background:var(--modal-ribbon-hover, rgba(0,0,0,0.04)); }
 .pill-ribbon .pr-cat-option.active { color:#6366f1; font-weight:500; }
 .pill-ribbon .pr-spacer { flex:1; min-width:6px; border-right:none; }
 .pill-ribbon .pr-action {
     display:flex; align-items:center; justify-content:center;
     width:46px; height:42px; flex-shrink:0;
     border:none; background:none; cursor:pointer;
-    border-left:0.5px solid rgba(0,0,0,0.08);
+    border-left:0.5px solid var(--modal-ribbon-border, rgba(0,0,0,0.08));
     transition:background 0.15s; text-decoration:none; color:inherit;
 }
-.pill-ribbon .pr-action:hover { background:rgba(0,0,0,0.04); }
+.pill-ribbon .pr-action:hover { background:var(--modal-ribbon-hover, rgba(0,0,0,0.04)); }
 .pill-ribbon .pr-action-last { border-top-right-radius:11px; border-bottom-right-radius:11px; }
 .pill-ribbon .pr-action-restore { font-size:11px; font-weight:500; color:#6366f1; width:auto; padding:0 13px; gap:5px; }
 `;
@@ -87,26 +90,6 @@ function formatDateDMY(dateStr) {
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
     return `${dd}-${mm}-${yyyy}`;
-}
-
-function formatDateTimeDetailed(dateStr) {
-    const d = new Date(dateStr);
-    if (isNaN(d)) return dateStr;
-
-    const hasTime = !(
-        d.getUTCHours() === 0 &&
-        d.getUTCMinutes() === 0 &&
-        d.getUTCSeconds() === 0 &&
-        d.getUTCMilliseconds() === 0
-    );
-
-    return d.toLocaleString('en-GB', {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        ...(hasTime ? { hour: '2-digit', minute: '2-digit' } : {}),
-    });
 }
 
 function buildCalendarPayload(email, deadline) {
@@ -179,6 +162,7 @@ function getPriorityConfig(urgency) {
 const PillRibbon = ({
     email,
     categories,
+    theme,
     dedupedDeadlines,
     hasUpcomingDeadline,
     activeTab,
@@ -244,8 +228,17 @@ const PillRibbon = ({
         height: 20
     };
 
+    const ribbonVars = {
+        '--modal-ribbon-bg': theme === 'light' ? '#ffffff' : '#111827',
+        '--modal-ribbon-border': theme === 'light' ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.1)',
+        '--modal-ribbon-hover': theme === 'light' ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.06)',
+        '--modal-ribbon-text': theme === 'light' ? '#334155' : '#e2e8f0',
+        '--modal-ribbon-muted': theme === 'light' ? '#64748b' : '#94a3b8',
+        '--modal-ribbon-popover': theme === 'light' ? '#ffffff' : '#162033',
+    };
+
     return (
-        <div className="pill-ribbon">
+        <div className="pill-ribbon" style={ribbonVars}>
 
             {/* Priority */}
             {priorityConfig && (
@@ -442,49 +435,6 @@ const PillRibbon = ({
     );
 };
 
-// ── Sandboxed iframe renderer for HTML email bodies ───────────────────────────
-const DateExtractionPanel = ({ deadlines, onAddToCalendar, addingDate }) => {
-    if (!deadlines.length) return null;
-
-    return (
-        <div className="date-panel">
-            <div className="date-panel-header">
-                <div>
-                    <h3 className="date-panel-title">Important dates found</h3>
-                    <p className="date-panel-subtitle">Review the extracted dates and add the ones you want to Google Calendar.</p>
-                </div>
-            </div>
-
-            <div className="date-panel-list">
-                {deadlines.map((deadline, index) => {
-                    const tag = deadlineTag(deadline.date);
-                    const isAdding = addingDate === deadline.date;
-
-                    return (
-                        <div key={`${deadline.date}-${index}`} className="date-panel-item">
-                            <div className="date-panel-copy">
-                                <span className={`date-panel-status date-panel-status-${tag.status}`}>
-                                    {deadline.label || 'Important date'}
-                                </span>
-                                <strong className="date-panel-when">{formatDateTimeDetailed(deadline.date)}</strong>
-                                <span className="date-panel-text">{deadline.text || 'Date extracted from the email content.'}</span>
-                            </div>
-                            <button
-                                type="button"
-                                className="date-panel-action"
-                                onClick={() => onAddToCalendar(deadline)}
-                                disabled={isAdding}
-                            >
-                                {isAdding ? 'Adding...' : 'Add to Calendar'}
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
 const SummaryPanel = ({ summaryData, isSummarizing }) => {
     if (!isSummarizing && !summaryData) return null;
 
@@ -517,6 +467,8 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
     const bodyBg = isDark ? '#111827' : '#fafbff';
     const bodyText = isDark ? '#cbd5e1' : '#334155';
     const linkColor = isDark ? '#818cf8' : '#4f46e5';
+    const surfaceBg = isDark ? '#0f172a' : '#ffffff';
+    const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
 
     const writeContent = useCallback(() => {
         setLoaded(false);
@@ -530,11 +482,21 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
             html, body {
                 margin: 0 !important; padding: 24px 28px !important;
                 background-color: ${bodyBg} !important; color: ${bodyText} !important;
+                color-scheme: ${isDark ? 'dark' : 'light'} !important;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
                 font-size: 14px !important; line-height: 1.75 !important;
                 overflow-x: hidden !important; word-break: break-word !important; max-width: 100% !important;
             }
-            * { max-width: 100% !important; }
+            body > * { max-width: 100% !important; }
+            p, div, span, td, th, li, blockquote, pre, code, strong, em, b, i, h1, h2, h3, h4, h5, h6 {
+                color: ${bodyText} !important;
+            }
+            div, section, article, main, aside, header, footer, table, tbody, thead, tr, td, th {
+                max-width: 100% !important;
+            }
+            table, td, th, div, section, article, main {
+                background-color: transparent !important;
+            }
             *[style*="color:#000"],*[style*="color: #000"],*[style*="color:black"],*[style*="color: black"],
             *[style*="color:#1"],*[style*="color:#2"],*[style*="color:#3"],*[style*="color:#333"],
             *[style*="color: rgb(0"] { color: ${bodyText} !important; }
@@ -544,17 +506,23 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
             *[style*="background-color:#ffffff"],*[style*="background-color: #ffffff"],
             *[style*="background-color: rgb(255"],*[style*="background-color:rgb(255"]
             { background-color: ${bodyBg} !important; }
-            table { border-color: rgba(255,255,255,0.08) !important; width: 100% !important;
-                max-width: 100% !important; table-layout: fixed !important; border-collapse: collapse; }
-            td, th { border-color: rgba(255,255,255,0.08) !important; max-width: 100% !important;
+            table { border-color: ${borderColor} !important; width: 100% !important;
+                max-width: 100% !important; table-layout: auto !important; border-collapse: collapse; }
+            td, th { border-color: ${borderColor} !important; max-width: 100% !important;
                 overflow-wrap: break-word !important; word-break: break-word !important; }
             table[align="center"], div[align="center"] { margin-left: 0 !important; margin-right: 0 !important; }
             img { max-width: 100% !important; height: auto !important; border-radius: 6px; opacity: 0.92; display: block; }
             a { color: ${linkColor} !important; text-decoration: underline !important; }
             img[width="1"], img[height="1"] { display: none !important; }
+            blockquote, pre, code {
+                background: ${surfaceBg} !important;
+                border: 1px solid ${borderColor} !important;
+                border-radius: 12px;
+            }
             pre { white-space: pre-wrap !important; word-break: break-word !important;
                 overflow-x: hidden !important; font-family: inherit !important;
-                max-width: 680px; margin: 0 auto; line-height: 1.7; }
+                max-width: 100%; margin: 0; line-height: 1.7; padding: 16px; }
+            blockquote { margin: 16px 0 !important; padding: 12px 16px !important; }
         `;
 
         let content;
@@ -590,7 +558,7 @@ const EmailBodyRenderer = ({ html, plainText, theme }) => {
         setTimeout(resize, 80);
         setTimeout(() => { resize(); setLoaded(true); }, 350);
         setTimeout(resize, 800);
-    }, [html, plainText, isDark, bodyBg, bodyText, linkColor]);
+    }, [html, plainText, isDark, bodyBg, bodyText, linkColor, surfaceBg, borderColor]);
 
     useEffect(() => { writeContent(); }, [writeContent]);
 
@@ -640,7 +608,7 @@ const EmailModal = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [email?._id]);
 
-    const [addingDate, setAddingDate] = useState(null);
+    const [isAddingToCalendar, setIsAddingToCalendar] = useState(false);
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [summaryData, setSummaryData] = useState(null);
 
@@ -673,7 +641,7 @@ const EmailModal = ({
         }
     };
 
-    const unusedHandleAddToCalendar = async () => {
+    const legacyHandleAddToCalendar = async () => {
         if (!email.extractedDeadlines?.length) return;
         const now = new Date();
         const upcoming = email.extractedDeadlines
@@ -700,28 +668,57 @@ const EmailModal = ({
             toast.error('Calendar error. Please try again.', { id: toastId });
         }
     };
-    void unusedHandleAddToCalendar;
+    void legacyHandleAddToCalendar;
 
-    const handleAddToCalendar = async (deadline = upcomingDeadlines[0] || extractedDates[0]) => {
-        if (!deadline) return;
+    const handleAddToCalendar = async () => {
+        const targetDeadlines = upcomingDeadlines.length > 0
+            ? upcomingDeadlines
+            : (extractedDates[0] ? [extractedDates[0]] : []);
 
-        const toastId = toast.loading('Adding to Google Calendar...');
-        setAddingDate(deadline.date);
+        if (!targetDeadlines.length || isAddingToCalendar) return;
+
+        const toastId = toast.loading(
+            targetDeadlines.length > 1
+                ? `Adding ${targetDeadlines.length} dates to Google Calendar...`
+                : 'Adding to Google Calendar...'
+        );
+        setIsAddingToCalendar(true);
+
         try {
-            const payload = buildCalendarPayload(email, deadline);
-            const res = await axios.post(`${API}/api/calendar/add-event`, payload, { withCredentials: true });
-            if (res.data.success) {
-                toast.success('Event added to Google Calendar!', { id: toastId });
-                if (res.data.event?.htmlLink) {
-                    window.open(res.data.event.htmlLink, '_blank', 'noopener,noreferrer');
-                }
-            } else {
-                toast.error('Failed to add event.', { id: toastId });
+            const results = await Promise.allSettled(
+                targetDeadlines.map((deadline) =>
+                    axios.post(
+                        `${API}/api/calendar/add-event`,
+                        buildCalendarPayload(email, deadline),
+                        { withCredentials: true }
+                    )
+                )
+            );
+
+            const successful = results.filter(
+                (result) => result.status === 'fulfilled' && result.value?.data?.success
+            );
+
+            if (!successful.length) {
+                toast.error('Calendar error. Please try again.', { id: toastId });
+                return;
+            }
+
+            toast.success(
+                successful.length === 1
+                    ? 'Event added to Google Calendar!'
+                    : `${successful.length} calendar events added.`,
+                { id: toastId }
+            );
+
+            const firstEventLink = successful[0]?.value?.data?.event?.htmlLink;
+            if (firstEventLink) {
+                window.open(firstEventLink, '_blank', 'noopener,noreferrer');
             }
         } catch {
             toast.error('Calendar error. Please try again.', { id: toastId });
         } finally {
-            setAddingDate(null);
+            setIsAddingToCalendar(false);
         }
     };
 
@@ -733,7 +730,7 @@ const EmailModal = ({
                 { category: newCat },
                 { withCredentials: true }
             );
-            onCategoryChange(res.data.email);
+            onCategoryChange(res.data.email, res.data.categories);
             toast.success(`Category updated to "${newCat}"`, { id: toastId });
         } catch {
             toast.error('Failed to update category.', { id: toastId });
@@ -741,7 +738,7 @@ const EmailModal = ({
     };
 
     const dedupedDeadlines = extractedDates;
-    const hasUpcomingDeadline = upcomingDeadlines.length > 0;
+    const hasUpcomingDeadline = dedupedDeadlines.length > 0;
 
     return (
         <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Email detail">
@@ -783,6 +780,7 @@ const EmailModal = ({
                 <PillRibbon
                     email={email}
                     categories={categories}
+                    theme={theme}
                     dedupedDeadlines={dedupedDeadlines}
                     hasUpcomingDeadline={hasUpcomingDeadline}
                     activeTab={activeTab}
@@ -796,12 +794,6 @@ const EmailModal = ({
                 {/* Body */}
                 <div className="modal-body">
                     <SummaryPanel summaryData={summaryData} isSummarizing={isSummarizing} />
-
-                    <DateExtractionPanel
-                        deadlines={dedupedDeadlines}
-                        onAddToCalendar={handleAddToCalendar}
-                        addingDate={addingDate}
-                    />
 
                     {email.body ? (
                         <EmailBodyRenderer html={email.body} plainText={email.snippet} theme={theme} />

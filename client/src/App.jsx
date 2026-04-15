@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { Capacitor } from '@capacitor/core';
-const API = Capacitor.isNativePlatform() ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+const API = 'http://localhost:5000';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import TermsOfService from './components/TermsOfService';

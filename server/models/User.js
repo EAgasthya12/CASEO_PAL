@@ -12,6 +12,30 @@ const UserSchema = new mongoose.Schema({
         default: ['Academic', 'Internship', 'Job', 'Event', 'Finance', 'Newsletter', 'Personal']
     },
     ignoredSenders: { type: [String], default: [] },
+    categoryLearning: {
+        senderRules: {
+            type: [{
+                senderKey: { type: String, required: true },
+                senderDomain: { type: String, default: '' },
+                category: { type: String, required: true },
+                strength: { type: Number, default: 1 },
+                updatedAt: { type: Date, default: Date.now },
+            }],
+            default: [],
+        },
+        manualCorrections: {
+            type: [{
+                emailId: { type: String, default: '' },
+                senderKey: { type: String, default: '' },
+                senderDomain: { type: String, default: '' },
+                originalCategory: { type: String, default: '' },
+                correctedCategory: { type: String, required: true },
+                subject: { type: String, default: '' },
+                updatedAt: { type: Date, default: Date.now },
+            }],
+            default: [],
+        },
+    },
     createdAt: { type: Date, default: Date.now },
 });
 
